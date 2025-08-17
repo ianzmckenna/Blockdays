@@ -1,0 +1,382 @@
+@font-face {
+    font-family: 'KarnakTitle';
+    src: url('assets/KarnakCondensed-Bold.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'FranklinText';
+    src: url('assets/Franklin-Bold.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+:root {
+    --game-scale: 1;
+    --grid-cell-size: 50px;
+    --palette-cell-size: 25px;
+    --board-size: 400px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'FranklinText', sans-serif;
+}
+
+html, body {
+    overscroll-behavior-y: none;
+    overflow: hidden;
+}
+
+body {
+    background-color: #fcfcfc;
+    display: flex;
+    justify-content: center;
+}
+
+.game-container {
+    text-align: center;
+    transform-origin: center;
+    width: fit-content;
+    height: fit-content;
+}
+
+h1, h2 {
+    font-family: 'KarnakTitle', sans-serif;
+}
+
+h1 {
+    font-size: calc(2rem * var(--game-scale));
+    font-weight: 500;
+}
+
+h2 {
+    font-size: calc(1.25rem * var(--game-scale));
+    font-weight: 300;
+}
+
+h3 {
+    font-size: calc(0.9rem * var(--game-scale));
+    font-family: 'FranklinText', sans-serif;
+    font-weight: 300;
+    color: #777;
+}
+
+p {
+    text-align: justify;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: calc(25px * var(--game-scale));
+    margin-top: calc(1.25rem * var(--game-scale));
+}
+
+#infoIcon, #userIcon {
+    height: calc(1.75rem * var(--game-scale)); /* Match h1 font-size */
+    width: auto; /* Maintain aspect ratio */
+    cursor: pointer;
+}
+
+#dateText {
+    font-size: calc(1.5rem * var(--game-scale));
+    padding: calc(20px * var(--game-scale)) 0;
+    color: #333;
+    vertical-align: middle;
+}
+
+.game-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(15px * var(--game-scale));
+}
+
+.board-container {
+    background-image: url('assets/Board.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: var(--board-size);
+    height: var(--board-size);
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#puzzleGrid {
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 87.5%;  /* 700px/800px */
+    height: 87.5%;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    position: relative;
+}
+
+.grid-cell {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: calc(0.9rem * var(--game-scale));
+    color: #ccc;
+    user-select: none;
+}
+
+.grid-cell.blocked {
+    background-image: url('assets/Blocked.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: white;
+}
+
+#pieceView {
+    display: flex;
+    width: 100%;
+    height: calc(4 * var(--grid-cell-size));
+    align-items: center;
+    justify-content: center;
+}
+
+.board-piece-container {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Allow events to pass through to cells */
+    pointer-events: none;
+}
+
+.piece-sprite {
+    position: absolute;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: transform 0.2s ease;
+    /* Allow events to pass through to cells */
+    pointer-events: none;
+}
+
+.piece-grid {
+    position: absolute;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    /* Allow events to pass through to cells */
+    pointer-events: none;
+}
+
+.piece-cell {
+    position: absolute;
+    /* Make sure cells can receive mouse events */
+    cursor: grab;
+    pointer-events: auto;
+}
+
+.on-grid {
+    z-index: 1;
+}
+
+.highlight {
+    filter: brightness(1.1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+    transform: translateZ(0); /* Force hardware acceleration, fixes ghosting on some browsers */
+}
+
+.dragging {
+    z-index: 2;
+    cursor: grabbing;
+    will-change: transform;
+}
+
+#piecePalette {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: calc(10px * var(--game-scale));
+    padding: calc(10px * var(--game-scale));
+    border-radius: calc(10px * var(--game-scale));
+    border: 1px solid #ccc;
+}
+
+.palette-piece-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-radius: calc(10px * var(--game-scale));
+    transition: background-color 0.1s ease;
+}
+
+.palette-piece-container.hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+.palette-piece-container.active {
+    background-color: rgba(52, 152, 219, 0.2);
+}
+
+.controls {
+    display: flex;
+    flex-direction: row;
+    gap: calc(1.75rem * var(--game-scale));
+}
+
+#rotateCWButton {
+    background-image: url('assets/RotateCW.png');
+}
+#flipVButton {
+    background-image: url('assets/FlipY.png');
+}
+#flipHButton {
+    background-image: url('assets/FlipX.png');
+}
+#rotateCCWButton {
+    background-image: url('assets/RotateCCW.png');
+}
+.control-button {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-color: transparent;
+}
+.control-button.active {
+    filter: brightness(0.5);
+}
+
+button {
+    width: calc(32px * var(--game-scale));
+    height: calc(32px * var(--game-scale));
+    font-size: calc(1rem * var(--game-scale));
+    color: white;
+    border: none;
+    border-radius: calc(5px * var(--game-scale));
+    cursor: pointer;
+    transition: background-color 0.1s ease, filter 0.1s ease;
+}
+
+#resetButton {
+    position: absolute;
+    width: 42%;
+    height: calc(30px * var(--game-scale));
+    left: 53%;
+    top: 90%;
+    padding: 0 10px;
+    background-color: #e74c3c;
+}
+
+#resetButton.active {
+    background-color: #c0392b;
+}
+
+/* This media query restricts the hover effect to devices with a mouse */
+@media (hover: hover) and (pointer: fine) {
+    .control-button:hover {
+        filter: brightness(0.5);
+    }
+    #resetButton:hover {
+        background-color: #c0392b;
+    }
+}
+
+#winMessage {
+    position: fixed;
+    top: calc(656px * var(--game-scale));
+    left: 50%;
+    width: calc(400px * var(--game-scale));
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 1.0);
+    padding: calc(30px * var(--game-scale));
+    border-radius: calc(10px * var(--game-scale));
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    z-index: 3;
+    text-align: center;
+}
+
+#winMessage h2 {
+    color: #27ae60;
+    margin-bottom: calc(15px * var(--game-scale));
+}
+
+#winMessage p {
+    font-size: calc(1.2rem * var(--game-scale));
+    margin-bottom: calc(15px * var(--game-scale));
+    text-align: center;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000; /* Ensure modal is on top */
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Enable scroll if content is too long */
+    background-color: rgba(0,0,0,0.25); /* Semi-transparent background */
+    display: flex; /* Used to center the modal content */
+    align-items: center; /* Used to center the modal content */
+    justify-content: center; /* Used to center the modal content */
+    font-family: 'FranklinText', sans-serif; /* Use FranklinText for modal content */
+}
+
+.modal-content {
+    position: relative; /* Set positioning context for children */
+    background-color: #fefefe;
+    margin: auto; /* Handles responsive centering */
+    padding: calc(20px * var(--game-scale));
+    border: 1px solid #888;
+    width: 80%; /* Adjust as needed */
+    max-width: calc(500px * var(--game-scale)); /* Maximum width */
+    border-radius: calc(10px * var(--game-scale));
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+    text-align: left;
+}
+
+.modal-content h1 {
+    text-align: center;
+    margin-bottom: calc(10px * var(--game-scale));
+}
+
+.modal-content h2, .modal-content h3 {
+    margin-top: calc(10px * var(--game-scale));
+    margin-bottom: calc(10px * var(--game-scale));
+}
+
+.modal-content p, .modal-content ul {
+    font-size: calc(0.9rem * var(--game-scale));
+    line-height: 1.6;
+}
+
+.modal-content ul {
+    padding-left: calc(20px * var(--game-scale));
+    margin-bottom: calc(10px * var(--game-scale));
+}
+
+.close-button {
+    position: absolute; /* Position relative to the modal-content */
+    top: calc(12px * var(--game-scale));
+    right: calc(18px * var(--game-scale));
+    color: #aaa;
+    font-size: calc(28px * var(--game-scale));
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#userIcon { /* Add cursor pointer to info icon */
+    filter: invert(0.8);
+}
+
+.hidden {
+    display: none;
+}

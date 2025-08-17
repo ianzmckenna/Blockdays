@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- SEO Meta Tags -->
+    <title>Blockdays - Daily Puzzle Game</title>
+    <meta name="description" content="Blockdays is a daily puzzle game. The objective is to fit all the pieces onto the board, fitting around the blocked squares. The blocked squares change each day to match the new date, creating a new puzzle each calendar day.">
+    <meta name="keywords" content="blockdays, puzzle, game, daily puzzle, calendar puzzle, brain teaser, logic game">
+    <link rel="canonical" href="https://www.blockdays.net" />
+
+    <!-- V V HELPFUL FOR LINK PREVIEWS V V -->
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Blockdays">
+    <meta property="og:url" content="https://www.blockdays.net">
+    <meta property="og:title" content="Blockdays">
+    <meta property="og:description" content="Blockdays is a daily puzzle game set on a calendar, and developed by Ian McKenna. The objective is to fit all the pieces onto the board, fitting around the blocked squares. The blocked squares change each day to match the new date, creating a new puzzle each calendar day.">
+    <meta property="og:image" content="https://www.blockdays.net/assets/Board.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:site" content="@Blockdays">
+    <meta property="twitter:creator" content="@ianzmckenna">
+    <meta property="twitter:url" content="https://www.blockdays.net">
+    <meta property="twitter:title" content="Blockdays">
+    <meta property="twitter:description" content="Blockdays is a daily puzzle game set on a calendar, and developed by Ian McKenna. The objective is to fit all the pieces onto the board, fitting around the blocked squares. The blocked squares change each day to match the new date, creating a new puzzle each calendar day.">
+    <meta property="twitter:image" content="https://www.blockdays.net/assets/Board.png">
+
+    <link rel="icon" href="assets/Board.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="game-container">
+
+        <div class="header">
+            <img src="assets/info.png" alt="Info Icon" id="infoIcon" title="Game Info">
+            <div>
+                <h1>Blockdays</h1>
+                <h3>365 Puzzles / 1 Per Day</h3>
+            </div>
+            <img src="assets/user.png" alt="User Icon" id="userIcon" title="User Profile">
+        </div>
+
+        <div id="dateText"></div>
+        
+        <div class="game-area">
+            <div class="board-container">
+                <div id="puzzleGrid"></div>
+                <button id="resetButton">Reset Game</button>
+            </div>
+            
+            <div id="pieceView">
+                <!-- Will be filled by JavaScript -->
+            </div>
+
+            <div class="controls">
+                <button class="control-button" id="rotateCCWButton"></button>
+                <button class="control-button" id="flipHButton"></button>
+                <button class="control-button" id="flipVButton"></button>
+                <button class="control-button" id="rotateCWButton"></button>
+            </div>
+            
+            <div id="piecePalette">
+                <!-- Will be filled by JavaScript -->
+            </div>
+        </div>
+        
+        <div id="winMessage" class="hidden"> 
+            <h2>Puzzle Solved!</h2>
+            <p>Great job! You've completed today's puzzle.</p>
+        </div>
+
+    </div>
+
+    <div id="infoModal" class="modal hidden">
+        <div class="modal-content">
+            
+            <div class="close-button" id="closeModalButton">&times;</div>
+            
+            <h1>About</h1>
+            <p style="text-justify: inter-word;">Blockdays is a daily puzzle game set on a calendar, and developed by <a href="https://www.github.com/ianzmckenna/" target="_blank">Ian McKenna</a>. The objective is to fit all the pieces onto the board, fitting around the blocked squares. The blocked squares change each day to match the new date, creating a new puzzle each calendar day.</p>
+
+            <h2>How to Play:</h2>
+            <ul>
+                <li>Select a piece from the Piece Palette at the bottom.</li>
+                <li>Use the 4 control buttons to orient the selected piece.</li>
+                <li>Drag and drop the piece from the preview area onto the game board.</li>
+                <li>Pieces cannot overlap with each other or with the blocked-out date squares.</li>
+                <li>Use the "Reset Game" button to clear the board if you get stuck.</li>
+            </ul>
+            
+            <p>Enjoy the challenge and come back each day for a new puzzle!</p>
+
+        </div>
+    </div>
+    
+    <!-- Load scripts in dependency order -->
+    <script src="js/constants.js"></script>
+    <script src="js/dateUtils.js"></script>
+    <script src="js/uiManager.js"></script>
+    <script src="js/pieceManager.js"></script>
+    <script src="js/gridManager.js"></script>
+    <script src="js/responsiveManager.js"></script>
+    <script src="js/gameController.js"></script>
+</body>
+</html>

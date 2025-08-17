@@ -1,0 +1,288 @@
+// Piece management functions
+
+// Create game pieces
+function createPieces() {
+    gameState.pieces = pieceDefinitions.map((def, index) => {
+        return {
+            id: index,
+            name: def.name,
+            shape: JSON.parse(JSON.stringify(def.shape)),
+            originalShape: JSON.parse(JSON.stringify(def.shape)),
+            image: def.image,
+            isOnGrid: false,
+            gridPosition: null,
+            rotation: 0,
+            isFlippedH: false,
+            isFlippedV: false
+        };
+    });
+}
+
+// Preload piece assets to browser cache
+function preloadPieceAssets() {
+    if (!pieceDefinitions || pieceDefinitions.length === 0) {
+        console.warn('Piece definitions not found or empty. Skipping asset preloading.');
+        return;
+    }
+
+    console.log('Initiating piece asset preloading...');
+    let loadedCount = 0;
+    let failedCount = 0;
+
+    pieceDefinitions.forEach(def => {
+        if (def.image) {
+            const img = new Image();
+            img.onload = () => {
+                loadedCount++;
+                if (loadedCount + failedCount === pieceDefinitions.length) {
+                    console.log(`Asset preloading complete. Loaded: ${loadedCount}, Failed: ${failedCount}`);
+                }
+            };
+            img.onerror = () => {
+                failedCount++;
+                console.error(`Failed to preload asset: ${def.image}`);
+                if (loadedCount + failedCount === pieceDefinitions.length) {
+                    console.log(`Asset preloading complete. Loaded: ${loadedCount}, Failed: ${failedCount}`);
+                }
+            };
+            img.src = def.image;
+        } else {
+            // Count as failed if no image property, or handle as appropriate
+            failedCount++; 
+            if (loadedCount + failedCount === pieceDefinitions.length) {
+                 console.log(`Asset preloading complete. Loaded: ${loadedCount}, Failed: ${failedCount}`);
+            }
+        }
+    });
+    // If pieceDefinitions is empty or all items lack an image property, log completion immediately.
+    if (pieceDefinitions.length === 0 || pieceDefinitions.every(def => !def.image)){
+        console.log('Asset preloading complete (no assets to load).');
+    }
+}
+
+// Check if placement is valid
+function isValidPlacement(piece, gridX, gridY) {
+    const shape = piece.shape;
+    
+    // Check if all cells of the piece are within valid grid cells
+    for (let y = 0; y < shape.length; y++) {
+        for (let x = 0; x < shape[y].length; x++) {
+            if (shape[y][x] === 1) {
+                const boardY = gridY + y;
+                const boardX = gridX + x;
+                
+                // Check if out of bounds
+                if (boardY < 0 || boardY >= GRID_SIZE || boardX < 0 || boardX >= GRID_SIZE) {
+                    return false;
+                }
+                
+                // Check if cell is valid (not out-of-bounds according to game rules)
+                if (gameState.validCells[boardY][boardX] !== 1) {
+                    return false;
+                }
+                
+                // Check if cell is a date block
+                const isDateBlock = gameState.dateBlocks.some(block => 
+                    block.row === boardY && block.col === boardX
+                );
+                
+                if (isDateBlock) {
+                    return false;
+                }
+                
+                // Check if cell is already occupied by another piece
+                if (gameState.boardState[boardY][boardX] !== null && 
+                    gameState.boardState[boardY][boardX] !== piece.id) {
+                    return false;
+                }
+            }
+        }
+    }
+    
+    return true;
+}
+
+// Place a piece on the grid
+function placePiece(piece, gridX, gridY, element) {
+    // Update piece state
+    piece.isOnGrid = true;
+    piece.gridPosition = { x: gridX, y: gridY };
+    
+    // Move the element to the puzzle grid container
+    const puzzleGrid = document.getElementById('puzzleGrid');
+    if (!puzzleGrid) {
+        console.error('puzzleGrid element not found');
+        return;
+    }
+    
+    element.remove(); // Remove from current parent
+    puzzleGrid.appendChild(element); // Add to puzzle grid
+    
+    // Position piece element relative to the puzzle grid
+    const boardCellSize = getResponsiveboardCellSize();
+    element.style.position = 'absolute';
+    element.style.left = `${gridX * boardCellSize}px`;
+    element.style.top = `${gridY * boardCellSize}px`;
+    element.classList.add('on-grid');
+
+    if (gameState.selectedPiece === piece.id) gameState.selectedPiece = null; // Deselect the piece
+    
+    // Update board state
+    updateBoardState();
+    
+    // Redraw palette (in case piece was moved from palette to grid)
+    drawPiecePalette();
+    
+    // Check win condition
+    checkWinCondition();
+}
+
+// Rotate a piece 90 degrees clockwise
+function rotatePieceCW(piece) {
+    const oldShape = piece.shape;
+    const height = oldShape.length;
+    const width = Math.max(...oldShape.map(row => row.length));
+    
+    // Initialize new shape array
+    const newShape = [];
+    for (let i = 0; i < width; i++) {
+        newShape.push(new Array(height).fill(0));
+    }
+    
+    // Rotate the shape
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < oldShape[y].length; x++) {
+            if (oldShape[y][x] === 1) {
+                newShape[x][height - 1 - y] = 1;
+            }
+        }
+    }
+    
+    // Update piece rotation state
+    piece.rotation = piece.rotation + 90;
+    
+    return newShape;
+}
+
+function rotatePieceCCW(piece) {
+    const oldShape = piece.shape;
+    const height = oldShape.length;
+    const width = Math.max(...oldShape.map(row => row.length));
+    
+    // Initialize new shape array
+    const newShape = [];
+    for (let i = 0; i < width; i++) {
+        newShape.push(new Array(height).fill(0));
+    }
+    
+    // Rotate the shape counter-clockwise
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < oldShape[y].length; x++) {
+            if (oldShape[y][x] === 1) {
+                newShape[width - 1 - x][y] = 1;
+            }
+        }
+    }
+    
+    // Update piece rotation state
+    piece.rotation = piece.rotation - 90;
+    
+    return newShape;
+}
+
+// Flip a piece horizontally
+function flipPieceHorizontal(piece) {
+    const oldShape = piece.shape;
+    const newShape = [];
+    
+    // Flip horizontally
+    for (let y = 0; y < oldShape.length; y++) {
+        const row = [...oldShape[y]];
+        newShape.push(row.reverse());
+    }
+    
+    // Update flip state
+    if (piece.rotation % 180 === 0) {
+        piece.isFlippedH = !piece.isFlippedH;
+    } else {
+        piece.isFlippedV = !piece.isFlippedV;
+    }
+    
+    return newShape;
+}
+
+// Flip a piece vertically
+function flipPieceVertical(piece) {
+    const oldShape = piece.shape;
+    const newShape = [...oldShape].reverse();
+    
+    // Update flip state
+    if (piece.rotation % 180 === 0) {
+        piece.isFlippedV = !piece.isFlippedV;
+    } else {
+        piece.isFlippedH = !piece.isFlippedH;
+    }
+    return newShape;
+}
+
+// Apply rotation or flip to the selected piece
+function transformSelectedPiece(transformType) {
+    const piece_id = gameState.selectedPiece;
+    if (piece_id === null) {
+        return;
+    }
+    const piece = gameState.pieces[piece_id];
+    
+    let newShape;
+    switch (transformType) {
+        case 'rotateCW':
+            newShape = rotatePieceCW(piece);
+            break;
+        case 'rotateCCW':
+            newShape = rotatePieceCCW(piece);
+            break;
+        case 'flipH':
+            newShape = flipPieceHorizontal(piece);
+            break;
+        case 'flipV':
+            newShape = flipPieceVertical(piece);
+            break;
+        default:
+            console.warn('Unknown transform type:', transformType);
+            return;
+    }
+    
+    // Update the piece's shape
+    piece.shape = newShape;
+    
+    // Calculate the transform string for CSS
+    let transformCss = `rotate(${piece.rotation}deg)`;
+    transformCss += ` scaleX(${piece.isFlippedH ? -1 : 1})`;
+    transformCss += ` scaleY(${piece.isFlippedV ? -1 : 1})`;
+
+    // Update the visual transform of the piece's sprite in the palette
+    const paletteSpriteSelector = `.palette-piece-container[data-piece-id="${piece.id}"] .piece-sprite`;
+    const paletteSprite = document.querySelector(paletteSpriteSelector);
+
+    if (paletteSprite) {
+        paletteSprite.style.transform = transformCss + ' scale(0.5)';
+    } else {
+        // This might happen if the selected piece is not in the palette,
+        // or if the palette hasn't been drawn yet for this piece.
+        console.warn(`Palette sprite not found for piece ID ${piece.id} during transform.`);
+    }
+
+    // Redraw the selected piece in the pieceView.
+    // This will update its grid structure based on the new shape,
+    // and also update its sprite's transform based on current piece state.
+    if (typeof updatePieceViewAfterTransform === 'function') {
+        updatePieceViewAfterTransform(piece, transformType); // Pass transformType
+    } else if (typeof drawSelectedPiece === 'function') {
+        // Fallback if the new function isn't available for some reason
+        console.warn('updatePieceViewAfterTransform not found, falling back to drawSelectedPiece.');
+        drawSelectedPiece();
+    } else {
+        console.error('drawSelectedPiece function is not available. Piece view cannot be updated.');
+    }
+}
+
