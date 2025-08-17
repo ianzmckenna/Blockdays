@@ -7,10 +7,10 @@ Blockdays is a small browser-based daily puzzle: fit all pieces onto a calendar-
 
 ## Project layout (important files)
 
-- [public/](public/)
+- [public/](public/) — Source folder
     - [index.html](public/index.html) — main HTML shell and script load order.
     - [style.css](public/style.css) — app styling and responsive CSS variables.
-    - [js/](public/js/)
+    - [js/](public/js/) — Scripts folder
         - [constants.js](public/js/constants.js) — sizes, GRID_SIZE, PIECE definitions and `gameState`.
         - [dateUtils.js](public/js/dateUtils.js) — date logic (`setupCurrentDate`).
         - [uiManager.js](public/js/uiManager.js) — palette, preview, creation of DOM pieces (`drawPiecePalette`, `createPalettePiece`, `createGridPiece`, `makeDraggable`, `updatePieceViewAfterTransform`).
@@ -37,15 +37,14 @@ Blockdays is a small browser-based daily puzzle: fit all pieces onto a calendar-
 
 ## Running locally
 
+1. Install dependencies: `npm install`
 1. Serve the `public/` folder using a static server (recommended during development):
-   - Quick test with Python: python -m http.server 8000 (run from `public/`)
-   - Or use any static server (live-server, http-server, etc.)
+   - Quick test with Python: `python -m http.server` (run from `public/`)
+   - OR
+   - Run a static server: `npx http-server -c-1` (run from root)
+      - `-c-1` sets a cache TTL of -1 seconds, meaning the server refreshes instantly on any change
 
-2. Open http://localhost:8000 in a browser.
-
-3. Dev notes:
-   - Initialization happens in [`initGame`](public/js/gameController.js) on DOMContentLoaded.
-   - If you edit piece shapes, update [`pieceDefinitions`](public/js/constants.js).
+2. Open the localhost link given by the server in a browser.
 
 ## Responsive behavior
 
@@ -54,7 +53,7 @@ Blockdays is a small browser-based daily puzzle: fit all pieces onto a calendar-
 
 ## Assets
 
-All in `public/assets/` and referenced from piece definitions in [`public/js/constants.js`](public/js/constants.js).
+All assets include the board sprite, blocked square sprite, piece sprites, and font files. They are all in `public/assets/` and referenced from piece definitions in [`public/js/constants.js`](public/js/constants.js).
 
 ## Firebase: connect & deploy (Hosting)
 
@@ -70,27 +69,18 @@ This project is configured for Firebase Hosting. The repo already includes host 
    firebase login
    ```
 
-3. Initialize or select the project
-   - To use the existing default from `.firebaserc`:
+3. Select the project
      ```sh
      firebase use blockdays-iwnl
-     ```
-   - Or to add/select a different project:
-     ```sh
-     firebase use --add
      ```
 
 4. Confirm hosting config
    - `firebase.json` is already set to serve the `public` directory and rewrite unknown routes to `index.html`:
      see [firebase.json](firebase.json).
 
-5. Build step (optional)
-   - The CI workflows run `npm run build`. If you introduce a build step (e.g., bundling), add a `build` script to [package.json](package.json).
-   - If no build is required, you can deploy the static `public/` folder directly.
-
-6. Deploy to hosting
+5. Deploy to hosting
    ```sh
-   firebase deploy --only hosting
+   firebase deploy
    ```
 
 7. CI/CD with GitHub Actions
@@ -102,17 +92,6 @@ This project is configured for Firebase Hosting. The repo already includes host 
 8. Firestore rules
    - Development rule included: [firestore.rules](firestore.rules)
    - Update rules before production use.
-
-## Troubleshooting
-
-- If pieces don't show or palette is empty, check `gameState` and pieces created by [`createPieces`](public/js/pieceManager.js).
-- If scaling looks wrong, inspect console logs from [`calculateOptimalScale`](public/js/responsiveManager.js).
-- If deploy fails, ensure Firebase CLI is logged in and that the project id matches `.firebaserc`.
-
-## Contributing
-
-- Keep UI script order consistent with [public/index.html](public/index.html).
-- Add tests or a build step if introducing modern bundlers; update CI workflows accordingly.
 
 ---
 
