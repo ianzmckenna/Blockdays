@@ -37,7 +37,7 @@ Blockdays is a small browser-based daily puzzle: fit all pieces onto a calendar-
 
 ## Running locally
 
-1. Install dependencies: `npm install`
+1. Install dependencies: `npm install` (only once)
 1. Serve the `public/` folder using a static server (recommended during development):
    - Quick test with Python: `python -m http.server` (run from `public/`)
    - OR
@@ -45,11 +45,7 @@ Blockdays is a small browser-based daily puzzle: fit all pieces onto a calendar-
       - `-c-1` sets a cache TTL of -1 seconds, meaning the server refreshes instantly on any change
 
 2. Open the localhost link given by the server in a browser.
-
-## Responsive behavior
-
-- The responsive logic uses `BASE_DIMENSIONS` in [`public/js/constants.js`](public/js/constants.js) and is applied by [`applyResponsiveScale`](public/js/responsiveManager.js).
-- The CSS uses custom properties such as `--game-scale` and `--grid-cell-size` defined in [public/style.css](public/style.css).
+   - If your mobile device is on the same network, this link is available there as well for testing.
 
 ## Assets
 

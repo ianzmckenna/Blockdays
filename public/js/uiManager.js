@@ -159,6 +159,7 @@ function createPalettePiece(piece) {
     const paletteCellSize = getResponsivePaletteCellSize();
     
     // Set container size
+    // Visually the idea is 4x size, logically for some reason is 2x
     pieceContainer.style.width = `${2 * paletteCellSize}px`;
     pieceContainer.style.height = `${2 * paletteCellSize}px`;
     

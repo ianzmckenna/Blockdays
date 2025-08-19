@@ -354,7 +354,6 @@ button {
 
 .modal-content ul {
     padding-left: calc(20px * var(--game-scale));
-    margin-bottom: calc(10px * var(--game-scale));
 }
 
 .close-button {
