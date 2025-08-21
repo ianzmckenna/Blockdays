@@ -11,12 +11,12 @@ Blockdays is a small browser-based daily puzzle game written in raw HTML, CSS, a
     - [index.html](public/index.html) - main HTML shell and script load order.
     - [style.css](public/style.css) - app styling and responsive CSS variables.
     - [js/](public/js/) - Scripts folder
-        - [constants.js](public/js/constants.js) - sizes, GRID_SIZE, PIECE definitions and `gameState`.
-        - [dateUtils.js](public/js/dateUtils.js) - date logic (`setupCurrentDate`).
+        - [constants.js](public/js/constants.js) - sizes, PIECE definitions and `gameState`.
+        - [dateUtils.js](public/js/dateUtils.js) - date logic (`initCurrentDate`).
         - [uiManager.js](public/js/uiManager.js) - palette, preview, creation of DOM pieces (`drawPiecePalette`, `createPalettePiece`, `createGridPiece`, `makeDraggable`, `updatePieceViewAfterTransform`).
-        - [pieceManager.js](public/js/pieceManager.js) - piece creation, transforms, placement helpers (`createPieces`, `preloadPieceAssets`, `isValidPlacement`, `placePiece`, `transformSelectedPiece`).
+        - [pieceManager.js](public/js/pieceManager.js) - piece creation, transforms, placement helpers (`initPieceStates`, `preloadPieceAssets`, `isValidPlacement`, `placePiece`, `transformSelectedPiece`).
         - [gridManager.js](public/js/gridManager.js) - grid draw and game lifecycle (`drawGrid`, `updateBoardState`, `checkWinCondition`, `resetGame`).
-        - [responsiveManager.js](public/js/responsiveManager.js) - responsive sizing (`calculateOptimalScale`, `applyResponsiveScale`, `getResponsiveboardCellSize`, `getResponsivePaletteCellSize`).
+        - [responsiveManager.js](public/js/responsiveManager.js) - responsive sizing (`calculateOptimalScale`, `applyResponsiveScale`, `getResponsiveBoardCellSize`, `getResponsivePaletteCellSize`).
         - [gameController.js](public/js/gameController.js) - initialization entrypoint (`initGame`) and UI wiring.
         - [firebase.js](public/js/firebase.js) - Firebase SDK initialization and config.
 - [firebase.json](firebase.json) and [.firebaserc](.firebaserc) - hosting configuration and default project.
@@ -31,11 +31,11 @@ Blockdays is a small browser-based daily puzzle game written in raw HTML, CSS, a
 
 ## Key features
 
-- Daily-blocked squares computed from the current date via [`setupCurrentDate`](public/js/dateUtils.js).
+- Daily-blocked squares computed from the current date via [`initCurrentDate`](public/js/dateUtils.js).
 - Responsive scaling managed by [`initResponsiveManager`](public/js/responsiveManager.js) and [`calculateOptimalScale`](public/js/responsiveManager.js).
 - Piece palette + preview UI implemented in [`drawPiecePalette`](public/js/uiManager.js) and updated by [`updatePieceViewAfterTransform`](public/js/uiManager.js).
 - Drag & drop placement with validation via [`makeDraggable`](public/js/uiManager.js), [`isValidPlacement`](public/js/pieceManager.js) and [`placePiece`](public/js/pieceManager.js).
-- Game logic: piece creation and transforms in [`createPieces`](public/js/pieceManager.js), [`transformSelectedPiece`](public/js/pieceManager.js), and rotation/flip helpers.
+- Game logic: piece creation and transforms in [`initPieceStates`](public/js/pieceManager.js), [`transformSelectedPiece`](public/js/pieceManager.js), and rotation/flip helpers.
 - Grid rendering and win detection via [`drawGrid`](public/js/gridManager.js), [`updateBoardState`](public/js/gridManager.js) and [`checkWinCondition`](public/js/gridManager.js).
 
 ## Running locally

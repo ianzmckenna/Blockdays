@@ -1,51 +1,34 @@
 // Game Constants
-const GRID_SIZE = 7;
-const BOARD_CELL_SIZE = 50; // Base cell size in pixels (for reference)
-const PALETTE_CELL_SIZE = 25; // Base palette cell size (for reference)
-const PIECE_COUNT = 8;
 
 // Base dimensions for scaling calculations
 const BASE_DIMENSIONS = {
-    gameWidth: 492,  // Exact px game width (at 100% scale)
-    gameHeight: 870, // Approximate px game height  
-    boardSize: 400,  // Exact px board length
-    boardCellSize: 50,
-    paletteCellSize: 25
+    gameWidth: 492,     // Exact px game width (at 100% scale)
+    gameHeight: 870,    // Approximate px game height  
+    boardSize: 400,     // Exact px board length
+    boardCellSize: 50,  // Exact px board cell size
+    paletteCellSize: 25 // Exact px palette cell size
 };
 
-// Game State
-const gameState = {
-    pieces: [],
-    selectedPiece: null,
-    dateBlocks: [],
-    validCells: [
-        [1,1,1,1,1,1,0],
-        [1,1,1,1,1,1,0],
-        [1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1],
-        [1,1,1,0,0,0,0]
-    ],
+const gameConstants = {
+    pieceCount: 8,
+    rowLengths: [6, 6, 7, 7, 7, 7, 3],
     cellContents: [
-        ["JAN","FEB","MAR","APR","MAY","JUN",    0],
-        ["JUL","AUG","SEP","OCT","NOV","DEC",    0],
+        ["JAN","FEB","MAR","APR","MAY","JUN"],
+        ["JUL","AUG","SEP","OCT","NOV","DEC"],
         [  "1",  "2",  "3",  "4",  "5",  "6",  "7"],
         [  "8",  "9", "10", "11", "12", "13", "14"],
         [ "15", "16", "17", "18", "19", "20", "21"],
         [ "22", "23", "24", "25", "26", "27", "28"],
-        [ "29", "30", "31",    0,    0,    0,    0]
+        [ "29", "30", "31"]
     ],
-    // cellContents: [
-    //     ["Jan","Feb","Mar","Apr","May","Jun",    0],
-    //     ["Jul","Aug","Sep","Oct","Nov","Dec",    0],
-    //     [  "1",  "2",  "3",  "4",  "5",  "6",  "7"],
-    //     [  "8",  "9", "10", "11", "12", "13", "14"],
-    //     [ "15", "16", "17", "18", "19", "20", "21"],
-    //     [ "22", "23", "24", "25", "26", "27", "28"],
-    //     [ "29", "30", "31",    0,    0,    0,    0]
-    // ],
-    boardState: Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null))
+}
+
+// Game State
+const gameState = {
+    pieceStates: [],
+    selectedPiece: null,
+    dateBlockPositions: [],
+    boardState: gameConstants.rowLengths.map(len => Array(len).fill(null))
 };
 
 // Piece Definitions

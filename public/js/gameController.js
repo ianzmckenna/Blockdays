@@ -1,8 +1,8 @@
 // Main game controller and initialization
 
 // DOM Elements (declared but initialized in initGame for proper timing)
-let dateText, puzzleGrid, pieceView, piecePalette;
-let winMessage, resetButton;
+let dateText, winMessage, resetButton;
+let calendarGrid, pieceView, piecePalette;
 let rotateCWButton, rotateCCWButton, flipHButton, flipVButton;
 
 // Initialize the game
@@ -13,7 +13,7 @@ function initGame() {
         
         // Initialize DOM elements with error checking
         dateText = document.getElementById('dateText');
-        puzzleGrid = document.getElementById('puzzleGrid');
+        calendarGrid = document.getElementById('calendarGrid');
         pieceView = document.getElementById('pieceView');
         piecePalette = document.getElementById('piecePalette');
         winMessage = document.getElementById('winMessage');
@@ -24,21 +24,21 @@ function initGame() {
         flipVButton = document.getElementById('flipVButton');
 
         // Check if critical elements exist
-        if (!puzzleGrid || !pieceView || !piecePalette) {
+        if (!calendarGrid || !pieceView || !piecePalette) {
             console.error('Critical DOM elements not found');
             return;
         }
 
         // Set up current date
-        setupCurrentDate();
+        initCurrentDate();
 
         // Create pieces
-        createPieces();
+        initPieceStates();
         
         // Preload piece assets
         preloadPieceAssets();
         
-        // Draw the puzzle grid
+        // Draw the calendar grid
         drawGrid();
         
         // Draw the piece palette
@@ -62,6 +62,7 @@ function setupButtonEventListeners() {
 
         const buttons = [resetButton, rotateCWButton, rotateCCWButton, flipHButton, flipVButton];
 
+        // Add styling touch event listeners for mobile functionality
         buttons.forEach(button => {
             if (button) {
                 button.addEventListener('touchstart', () => button.classList.add('active'), { passive: true });

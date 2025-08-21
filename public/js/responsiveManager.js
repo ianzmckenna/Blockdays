@@ -73,7 +73,7 @@ function initResponsiveManager() {
 }
 
 // Get current responsive cell size for calculations
-function getResponsiveboardCellSize() {
+function getResponsiveBoardCellSize() {
     return window.RESPONSIVE_BOARD_CELL_SIZE || BASE_DIMENSIONS.boardCellSize;
 }
 

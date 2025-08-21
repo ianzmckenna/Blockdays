@@ -1,18 +1,13 @@
 // Date utility functions
 
 // Month abbreviations for date display
-// const months = [
-//     "JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
-//     "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
-// ];
-
 const months = [
     "January", "February", "March", "April", "May", "June", 
     "July", "August", "September", "October", "November", "December"
 ];
 
 // Set up the current date and find date blocks
-function setupCurrentDate() {
+function initCurrentDate() {
 
     const date = new Date();
     const month_id = date.getMonth(); // 0-11 for Jan-Dec
@@ -34,5 +29,6 @@ function setupCurrentDate() {
     let dayRow = Math.floor((day - 1) / 7) + 2;
     let dayCol = ((day - 1) % 7);
 
-    gameState.dateBlocks = [{row: monthRow, col: monthCol}, {row: dayRow, col: dayCol}];
+    // for collision and css
+    gameState.dateBlockPositions = [{row: monthRow, col: monthCol}, {row: dayRow, col: dayCol}];
 }

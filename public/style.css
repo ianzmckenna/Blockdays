@@ -110,7 +110,7 @@ p {
     align-items: center;
 }
 
-#puzzleGrid {
+#calendarGrid {
     background-size: contain;
     background-repeat: no-repeat;
     width: 87.5%;  /* 700px/800px */
@@ -162,6 +162,7 @@ p {
     background-repeat: no-repeat;
     background-position: center;
     transition: transform 0.2s ease;
+    will-change: transform;
     /* Allow events to pass through to cells */
     pointer-events: none;
 }
@@ -195,6 +196,7 @@ p {
     z-index: 2;
     cursor: grabbing;
     will-change: transform;
+    backface-visibility: hidden; /* Hardware acceleration hint */
 }
 
 #piecePalette {

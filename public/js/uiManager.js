@@ -18,7 +18,7 @@ function drawPiecePalette() {
     pieceView.innerHTML = '';
     
     // Get available (not on grid) pieces
-    const availablePieces = gameState.pieces.filter(p => !p.isOnGrid);
+    const availablePieces = gameState.pieceStates.filter(p => !p.isOnGrid);
     
     // No pieces to show, hide the palette to hide the border
     if (availablePieces.length === 0) {
@@ -166,7 +166,7 @@ function createPalettePiece(piece) {
     // Create piece shape outline with transparent cells
     const pieceSprite = document.createElement('div');
     pieceSprite.className = 'piece-sprite';
-    pieceSprite.style.backgroundImage = `url(${piece.image})`;
+    pieceSprite.style.backgroundImage = `url(${pieceDefinitions[piece.id].image})`;
 
     pieceSprite.style.transform += `rotate(${piece.rotation}deg)`
     pieceSprite.style.transform += `scaleX(${piece.isFlippedH ? -1 : 1})` 
@@ -201,7 +201,7 @@ function createGridPiece(piece) {
     const shape = piece.shape;
     const height = shape.length;
     const width = Math.max(...shape.map(row => row.length));
-    const boardCellSize = getResponsiveboardCellSize();
+    const boardCellSize = getResponsiveBoardCellSize();
 
     // Set container size
     const pieceContainer = document.createElement('div');
@@ -220,7 +220,7 @@ function createGridPiece(piece) {
         pieceSprite.style.width = `${height * boardCellSize}px`;
         pieceSprite.style.height = `${width * boardCellSize}px`;
     }
-    pieceSprite.style.backgroundImage = `url(${piece.image})`;
+    pieceSprite.style.backgroundImage = `url(${pieceDefinitions[piece.id].image})`;
 
     pieceSprite.style.transform += ` rotate(${piece.rotation}deg)`;
     pieceSprite.style.transform += ` scaleX(${piece.isFlippedH ? -1 : 1})`;
@@ -282,6 +282,7 @@ function makeDraggable(element) {
     let initialX, initialY;
     let offsetX, offsetY;
     let isDragging = false;
+    let dragAnimationFrame = null;
 
     element.querySelectorAll(".piece-cell").forEach((cell) => {
         cell.addEventListener('mousedown', startDrag);
@@ -336,12 +337,17 @@ function makeDraggable(element) {
         if (isDragging) {
             e.preventDefault();
 
-            // Calculate new position based on mouse movement
-            const newX = e.clientX - offsetX;
-            const newY = e.clientY - offsetY;
-            
-            // Update element position using transform for performance
-            element.style.transform = `translate(${newX - initialX}px, ${newY - initialY}px)`;
+            if (!dragAnimationFrame) {
+                dragAnimationFrame = requestAnimationFrame(() => {
+                    // Calculate new position based on mouse movement
+                    const newX = e.clientX - offsetX;
+                    const newY = e.clientY - offsetY;
+
+                    // Update element position using transform for performance
+                    element.style.transform = `translate(${newX - initialX}px, ${newY - initialY}px)`;
+                    dragAnimationFrame = null; // Reset animation frame
+                });
+            }
         }
     }
     
@@ -364,6 +370,13 @@ function makeDraggable(element) {
             isDragging = false;
             element.classList.remove('dragging');
 
+            // Cancel any ongoing drag animation
+            // Without this, a drag event might occur after endDrag if the drag motion is fast enough
+            if (dragAnimationFrame) {
+                cancelAnimationFrame(dragAnimationFrame);
+                dragAnimationFrame = null;
+            }
+
             // Get the final mouse/touch position
             const finalEvent = e.changedTouches ? e.changedTouches[0] : e;
             const finalX = finalEvent.clientX - offsetX;
@@ -372,37 +385,33 @@ function makeDraggable(element) {
             // Reset transform before calculating final position
             element.style.transform = '';
             
-            // Explicitly remove highlight from the piece's sprite
-            // const pieceSprite = element.querySelector('.piece-sprite');
-            // if (pieceSprite) {
-            //     pieceSprite.classList.remove('highlight');
-            // }
-            
             // Get piece id
             const pieceId = parseInt(element.dataset.pieceId);
-            const piece = gameState.pieces[pieceId];
+            const piece = gameState.pieceStates[pieceId];
 
             // Get current position and convert to grid coordinates
-            const puzzleGrid = document.getElementById('puzzleGrid');
-            if (!puzzleGrid) {
-                console.error('puzzleGrid element not found');
+            const calendarGrid = document.getElementById('calendarGrid');
+            if (!calendarGrid) {
+                console.error('calendarGrid element not found');
                 return;
             }        
                 
-            const gridRect = puzzleGrid.getBoundingClientRect();
-            const boardCellSize = getResponsiveboardCellSize();
-            const gridX = Math.round((finalX - gridRect.left) / boardCellSize);
-            const gridY = Math.round((finalY - gridRect.top) / boardCellSize);
+            const gridRect = calendarGrid.getBoundingClientRect();
+            const boardCellSize = getResponsiveBoardCellSize();
+            const gridPlacementCoords = [
+                Math.round((finalX - gridRect.left) / boardCellSize),
+                Math.round((finalY - gridRect.top) / boardCellSize)
+            ];
             
             // Check if placement is valid
-            if (isValidPlacement(piece, gridX, gridY)) {
+            if (isValidPlacement(piece, gridPlacementCoords)) {
                 // Place the piece
-                placePiece(piece, gridX, gridY, element);
+                placePiece(piece, gridPlacementCoords, element);
             } else {
                 // If not valid, return to palette
                 element.remove();
                 piece.isOnGrid = false;
-                piece.gridPosition = null;
+                piece.gridPlacementCoords = [null, null];
                 gameState.selectedPiece = piece.id;
                 updateBoardState();
                 drawPiecePalette();
@@ -441,7 +450,7 @@ function updatePieceViewAfterTransform(piece, transformType) { // Added transfor
     const shape = piece.shape;
     const height = shape.length;
     const width = Math.max(...shape.map(row => row.length || 0)); // Ensure width is calculated correctly
-    const boardCellSize = getResponsiveboardCellSize();
+    const boardCellSize = getResponsiveBoardCellSize();
 
     pieceViewContainer.style.width = `${width * boardCellSize}px`;
     pieceViewContainer.style.height = `${height * boardCellSize}px`;
@@ -454,7 +463,6 @@ function updatePieceViewAfterTransform(piece, transformType) { // Added transfor
         pieceSprite.style.width = `${height * boardCellSize}px`; // Uses container's logical height
         pieceSprite.style.height = `${width * boardCellSize}px`;  // Uses container's logical width
     }
-    // pieceSprite.style.backgroundImage = \`url(${piece.image})\`; // Image URL doesn't change
 
     // 3. Remove old piece-grid
     if (oldPieceGrid) {

@@ -1,19 +1,16 @@
 // Piece management functions
 
 // Create game pieces
-function createPieces() {
-    gameState.pieces = pieceDefinitions.map((def, index) => {
-        return {
-            id: index,
-            name: def.name,
+function initPieceStates() {
+    gameState.pieceStates = pieceDefinitions.map((def, index) => {
+        return {    
+            id: index,                         // included for reference (used in placement checking)
             shape: JSON.parse(JSON.stringify(def.shape)),
-            originalShape: JSON.parse(JSON.stringify(def.shape)),
-            image: def.image,
-            isOnGrid: false,
-            gridPosition: null,
-            rotation: 0,
-            isFlippedH: false,
-            isFlippedV: false
+            isOnGrid: false,            
+            gridPlacementCoords: [null, null], // x and y coordinates for top-left cell
+            rotation: 0,                       // rotation angle in degrees
+            isFlippedH: false,                 // horizontal flip state
+            isFlippedV: false                  // vertical flip state
         };
     });
 }
@@ -61,32 +58,28 @@ function preloadPieceAssets() {
 }
 
 // Check if placement is valid
-function isValidPlacement(piece, gridX, gridY) {
+function isValidPlacement(piece, gridPlacementCoords) {
+
     const shape = piece.shape;
-    
+    const [gridXPlacement, gridYPlacement] = gridPlacementCoords;
+
     // Check if all cells of the piece are within valid grid cells
-    for (let y = 0; y < shape.length; y++) {
-        for (let x = 0; x < shape[y].length; x++) {
-            if (shape[y][x] === 1) {
-                const boardY = gridY + y;
-                const boardX = gridX + x;
-                
+    for (let cellY = 0; cellY < shape.length; cellY++) {
+        for (let cellX = 0; cellX < shape[cellY].length; cellX++) {
+            if (shape[cellY][cellX] === 1) {
+                // Get cell's board position
+                const boardY = gridYPlacement + cellY;
+                const boardX = gridXPlacement + cellX;
+
                 // Check if out of bounds
-                if (boardY < 0 || boardY >= GRID_SIZE || boardX < 0 || boardX >= GRID_SIZE) {
-                    return false;
-                }
-                
-                // Check if cell is valid (not out-of-bounds according to game rules)
-                if (gameState.validCells[boardY][boardX] !== 1) {
+                if (boardY >= gameConstants.rowLengths.length || boardX >= gameConstants.rowLengths[boardY]) {
                     return false;
                 }
                 
                 // Check if cell is a date block
-                const isDateBlock = gameState.dateBlocks.some(block => 
+                if (gameState.dateBlockPositions.some(block => 
                     block.row === boardY && block.col === boardX
-                );
-                
-                if (isDateBlock) {
+                )) {
                     return false;
                 }
                 
@@ -103,26 +96,27 @@ function isValidPlacement(piece, gridX, gridY) {
 }
 
 // Place a piece on the grid
-function placePiece(piece, gridX, gridY, element) {
+function placePiece(piece, gridPlacementCoords, element) {
     // Update piece state
     piece.isOnGrid = true;
-    piece.gridPosition = { x: gridX, y: gridY };
-    
-    // Move the element to the puzzle grid container
-    const puzzleGrid = document.getElementById('puzzleGrid');
-    if (!puzzleGrid) {
-        console.error('puzzleGrid element not found');
+    piece.gridPlacementCoords = gridPlacementCoords;
+    const [gridXPlacement, gridYPlacement] = gridPlacementCoords;
+
+    // Move the element to the calendar grid container
+    const calendarGrid = document.getElementById('calendarGrid');
+    if (!calendarGrid) {
+        console.error('calendarGrid element not found');
         return;
     }
     
     element.remove(); // Remove from current parent
-    puzzleGrid.appendChild(element); // Add to puzzle grid
-    
-    // Position piece element relative to the puzzle grid
-    const boardCellSize = getResponsiveboardCellSize();
+    calendarGrid.appendChild(element); // Add to calendar grid
+
+    // Position piece element relative to the calendar grid
+    const boardCellSize = getResponsiveBoardCellSize();
     element.style.position = 'absolute';
-    element.style.left = `${gridX * boardCellSize}px`;
-    element.style.top = `${gridY * boardCellSize}px`;
+    element.style.left = `${gridXPlacement * boardCellSize}px`;
+    element.style.top = `${gridYPlacement * boardCellSize}px`;
     element.classList.add('on-grid');
 
     if (gameState.selectedPiece === piece.id) gameState.selectedPiece = null; // Deselect the piece
@@ -160,8 +154,7 @@ function rotatePieceCW(piece) {
     
     // Update piece rotation state
     piece.rotation = piece.rotation + 90;
-    
-    return newShape;
+    piece.shape = newShape;
 }
 
 function rotatePieceCCW(piece) {
@@ -186,16 +179,15 @@ function rotatePieceCCW(piece) {
     
     // Update piece rotation state
     piece.rotation = piece.rotation - 90;
-    
-    return newShape;
+    piece.shape = newShape;
 }
 
 // Flip a piece horizontally
 function flipPieceHorizontal(piece) {
     const oldShape = piece.shape;
-    const newShape = [];
     
     // Flip horizontally
+    const newShape = [];
     for (let y = 0; y < oldShape.length; y++) {
         const row = [...oldShape[y]];
         newShape.push(row.reverse());
@@ -207,8 +199,7 @@ function flipPieceHorizontal(piece) {
     } else {
         piece.isFlippedV = !piece.isFlippedV;
     }
-    
-    return newShape;
+    piece.shape = newShape;
 }
 
 // Flip a piece vertically
@@ -222,7 +213,7 @@ function flipPieceVertical(piece) {
     } else {
         piece.isFlippedH = !piece.isFlippedH;
     }
-    return newShape;
+    piece.shape = newShape;
 }
 
 // Apply rotation or flip to the selected piece
@@ -231,29 +222,26 @@ function transformSelectedPiece(transformType) {
     if (piece_id === null) {
         return;
     }
-    const piece = gameState.pieces[piece_id];
+    const piece = gameState.pieceStates[piece_id];
     
-    let newShape;
+    // Update the piece's shape
     switch (transformType) {
         case 'rotateCW':
-            newShape = rotatePieceCW(piece);
+            rotatePieceCW(piece);
             break;
         case 'rotateCCW':
-            newShape = rotatePieceCCW(piece);
+            rotatePieceCCW(piece);
             break;
         case 'flipH':
-            newShape = flipPieceHorizontal(piece);
+            flipPieceHorizontal(piece);
             break;
         case 'flipV':
-            newShape = flipPieceVertical(piece);
+            flipPieceVertical(piece);
             break;
         default:
             console.warn('Unknown transform type:', transformType);
             return;
     }
-    
-    // Update the piece's shape
-    piece.shape = newShape;
     
     // Calculate the transform string for CSS
     let transformCss = `rotate(${piece.rotation}deg)`;
