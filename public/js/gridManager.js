@@ -76,10 +76,8 @@ function checkWinCondition() {
     // Count how many pieces are on the grid
     const piecesOnGrid = gameState.pieceStates.filter(p => p.isOnGrid).length;
     
-    // Count valid grid cells minus date blocks
-    const validCellCount = gameConstants.rowLengths.reduce((count, rowLength) => {
-        return count + rowLength;
-    }, 0);
+    // Count valid grid cells minus 2 date blocks
+    const validCellCount = gameConstants.rowLengths.reduce((sum, length) => sum + length, 0) - 2;
     
     // Count cells covered by pieces
     let coveredCellCount = 0;
@@ -97,6 +95,11 @@ function checkWinCondition() {
         const pieces = document.querySelectorAll('.on-grid');
 
         pieces.forEach(piece => {
+            const pieceSprite = piece.querySelector('.piece-sprite');
+            if (pieceSprite?.classList.contains('highlight')) {
+                pieceSprite.classList.remove('highlight');
+            }
+            
             const pieceCells = piece.querySelectorAll('.piece-cell');
             pieceCells.forEach(cell => {
                 cell.style.cursor = 'default';

@@ -188,9 +188,8 @@ function flipPieceHorizontal(piece) {
     
     // Flip horizontally
     const newShape = [];
-    for (let y = 0; y < oldShape.length; y++) {
-        const row = [...oldShape[y]];
-        newShape.push(row.reverse());
+    for (const row of oldShape) {
+        newShape.push([...row].toReversed());
     }
     
     // Update flip state
