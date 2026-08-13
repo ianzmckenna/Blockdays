@@ -7,12 +7,15 @@ let currentScale = 1;
 function calculateOptimalScale() {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
+    const topAdShell = document.querySelector('.top-ad-shell');
+    const bodyStyles = window.getComputedStyle(document.body);
+    const reservedTopSpace = (topAdShell?.offsetHeight || 0) + parseFloat(bodyStyles.paddingTop || 0);
 
     console.log(`Window size: ${windowWidth}x${windowHeight}`);
     
     // Account for padding and margins
     const availableWidth = windowWidth - 40; // 20px padding on each side
-    const availableHeight = windowHeight - 40; // 20px padding top/bottom
+    const availableHeight = windowHeight - reservedTopSpace - 40; // 20px padding above/below the game
     
     // Calculate scale based on width and height constraints
     const widthScale = availableWidth / BASE_DIMENSIONS.gameWidth;

@@ -222,6 +222,10 @@ function transformSelectedPiece(transformType) {
         return;
     }
     const piece = gameState.pieceStates[piece_id];
+
+    if (typeof startDailyTimerIfNeeded === 'function') {
+        startDailyTimerIfNeeded();
+    }
     
     // Update the piece's shape
     switch (transformType) {

@@ -6,14 +6,64 @@ const months = [
     "July", "August", "September", "October", "November", "December"
 ];
 
+function padDatePart(value) {
+    return String(value).padStart(2, '0');
+}
+
+function getLocalTimezone() {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'local';
+}
+
+function getDateKeyForParts(year, monthIndex, day) {
+    return `${year}-${padDatePart(monthIndex + 1)}-${padDatePart(day)}`;
+}
+
+function getDateKeyForDate(date) {
+    return getDateKeyForParts(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getLocalDateKey(date = new Date()) {
+    return getDateKeyForDate(date);
+}
+
+function parseDateKey(dateKey) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    return new Date(year, month - 1, day);
+}
+
+function addDays(date, days) {
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + days);
+    return nextDate;
+}
+
+function getLocalPuzzleDate(date = new Date()) {
+    const year = date.getFullYear();
+    const monthIndex = date.getMonth();
+    const day = date.getDate();
+
+    return {
+        year,
+        monthIndex,
+        month: monthIndex + 1,
+        day,
+        dateKey: getDateKeyForParts(year, monthIndex, day),
+        timezone: getLocalTimezone()
+    };
+}
+
 // Set up the current date and find date blocks
 function initCurrentDate() {
 
-    const date = new Date();
-    const month_id = date.getMonth(); // 0-11 for Jan-Dec
-    const day = date.getDate(); // 1-31 for the day of the month
+    const currentDate = getLocalPuzzleDate();
+    const month_id = currentDate.monthIndex; // 0-11 for Jan-Dec
+    const day = currentDate.day; // 1-31 for the day of the month
+
+    // For testing with a specific date:
     // const month_id = 8;
     // const day = 28;
+
+    gameState.currentDate = currentDate;
     
     // Display current date
     const dateText = document.getElementById('dateText');

@@ -1,18 +1,59 @@
-rules_version='2'
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function validDateKey(value) {
+      return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function validDailyResult(userId, dateKey) {
+      return owns(userId)
+        && request.resource.data.keys().hasOnly([
+          'dateKey',
+          'durationMs',
+          'completedAt',
+          'puzzleMonth',
+          'puzzleDay',
+          'timezone'
+        ])
+        && request.resource.data.dateKey == dateKey
+        && validDateKey(request.resource.data.dateKey)
+        && request.resource.data.durationMs is int
+        && request.resource.data.durationMs >= 0
+        && request.resource.data.durationMs <= 604800000
+        && request.resource.data.completedAt == request.time
+        && request.resource.data.puzzleMonth is int
+        && request.resource.data.puzzleMonth >= 1
+        && request.resource.data.puzzleMonth <= 12
+        && request.resource.data.puzzleDay is int
+        && request.resource.data.puzzleDay >= 1
+        && request.resource.data.puzzleDay <= 31
+        && request.resource.data.timezone is string
+        && request.resource.data.timezone.size() > 0
+        && request.resource.data.timezone.size() <= 64;
+    }
+
+    match /users/{userId} {
+      allow read: if owns(userId);
+      allow create, update, delete: if false;
+
+      match /dailyResults/{dateKey} {
+        allow read: if owns(userId);
+        allow create: if validDailyResult(userId, dateKey);
+        allow update, delete: if false;
+      }
+    }
+
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 7, 6);
+      allow read, write: if false;
     }
   }
 }

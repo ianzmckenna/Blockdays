@@ -1,5 +1,11 @@
 // UI management functions for palette, dragging, and piece display
 
+function preventDefaultIfCancelable(event) {
+    if (event.cancelable) {
+        event.preventDefault();
+    }
+}
+
 // Draw the piece palette (carousel)
 function drawPiecePalette() {
 
@@ -56,29 +62,29 @@ function makeSelectable(palette) {
 
     // Handle mouse down on palette
     palette.addEventListener('mousedown', function(e) {
-        e.preventDefault(); // Prevent default drag behavior
+        preventDefaultIfCancelable(e); // Prevent default drag behavior
         isMouseDown = true;
         selectClosestPiece(e);
     });
     palette.addEventListener('touchstart', function(e) {
-        e.preventDefault();
+        preventDefaultIfCancelable(e);
         isMouseDown = true;
         selectClosestPiece(e.touches[0]);
-    });
+    }, { passive: false });
 
     // Handle mouse move while button is held down
     palette.addEventListener('mousemove', function(e) {
         if (isMouseDown) {
-            e.preventDefault();
+            preventDefaultIfCancelable(e);
             selectClosestPiece(e);
         }
     });
     palette.addEventListener('touchmove', function(e) {
         if (isMouseDown) {
-            e.preventDefault();
+            preventDefaultIfCancelable(e);
             selectClosestPiece(e.touches[0]);
         }
-    });
+    }, { passive: false });
 
     // Handle mouse up
     document.addEventListener('mouseup', function(e) {
@@ -286,11 +292,14 @@ function makeDraggable(element) {
 
     element.querySelectorAll(".piece-cell").forEach((cell) => {
         cell.addEventListener('mousedown', startDrag);
-        cell.addEventListener('touchstart', startDragTouch);
+        cell.addEventListener('touchstart', startDragTouch, { passive: false });
     });
     
     function startDrag(e) {
-        e.preventDefault();
+        preventDefaultIfCancelable(e);
+        if (typeof startDailyTimerIfNeeded === 'function') {
+            startDailyTimerIfNeeded();
+        }
         isDragging = true;
         
         // Calculate the offset from the mouse position to the top-left of the element
@@ -311,7 +320,10 @@ function makeDraggable(element) {
     }
     
     function startDragTouch(e) {
-        e.preventDefault();
+        preventDefaultIfCancelable(e);
+        if (typeof startDailyTimerIfNeeded === 'function') {
+            startDailyTimerIfNeeded();
+        }
         isDragging = true;
         
         // Calculate the offset from the touch position to the top-left of the element
@@ -329,13 +341,13 @@ function makeDraggable(element) {
         element.classList.add('dragging');
         
         // Add event listeners for drag and end events
-        document.addEventListener('touchmove', dragTouch);
+        document.addEventListener('touchmove', dragTouch, { passive: false });
         document.addEventListener('touchend', endDrag);
     }
 
     function drag(e) {
         if (isDragging) {
-            e.preventDefault();
+            preventDefaultIfCancelable(e);
 
             if (!dragAnimationFrame) {
                 dragAnimationFrame = requestAnimationFrame(() => {
@@ -353,7 +365,7 @@ function makeDraggable(element) {
     
     function dragTouch(e) {
         if (isDragging) {
-            e.preventDefault();
+            preventDefaultIfCancelable(e);
             const touch = e.touches[0];
             
             // Calculate new position based on touch movement
@@ -369,6 +381,11 @@ function makeDraggable(element) {
         if (isDragging) {
             isDragging = false;
             element.classList.remove('dragging');
+
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchmove', dragTouch);
+            document.removeEventListener('touchend', endDrag);
 
             // Cancel any ongoing drag animation
             // Without this, a drag event might occur after endDrag if the drag motion is fast enough

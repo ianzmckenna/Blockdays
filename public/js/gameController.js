@@ -32,6 +32,14 @@ function initGame() {
         // Set up current date
         initCurrentDate();
 
+        if (typeof initTimerManager === 'function') {
+            initTimerManager();
+        }
+
+        if (typeof initFirebaseManager === 'function') {
+            initFirebaseManager();
+        }
+
         // Create pieces
         initPieceStates();
         
@@ -46,6 +54,10 @@ function initGame() {
         
         // Set up event listeners on buttons
         setupButtonEventListeners();
+
+        if (typeof initHistoryManager === 'function') {
+            initHistoryManager();
+        }
         
         console.log('Game initialized successfully');
     } catch (error) {

@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    
 
     <!-- SEO Meta Tags -->
     <title>Blockdays - Daily Puzzle Game</title>
@@ -30,11 +31,20 @@
     <meta property="twitter:description" content="Blockdays is a daily puzzle game set on a calendar, and developed by Ian McKenna. The objective is to fit all the pieces onto the board, fitting around the blocked squares. The blocked squares change each day to match the new date, creating a new puzzle each calendar day.">
     <meta property="twitter:image" content="https://www.blockdays.net/assets/Board.png">
 
+    <!-- AdSense -->
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6416733281766964" crossorigin="anonymous"></script>
+
     <link rel="icon" href="assets/Board.png" type="image/png">
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <aside class="top-ad-shell" aria-label="Advertisement">
+        <div class="top-ad-slot">
+            <span class="ad-label">Advertisement</span>
+        </div>
+    </aside>
+
     <div class="game-container">
 
         <div class="header">
@@ -47,6 +57,7 @@
         </div>
 
         <div id="dateText"></div>
+        <div id="timerText" aria-live="polite">00:00</div>
         
         <div class="game-area">
             <div class="board-container">
@@ -72,7 +83,9 @@
         
         <div id="winMessage" class="hidden"> 
             <h2>Puzzle Solved!</h2>
-            <p>Great job! You've completed today's puzzle.</p>
+            <p>Completed in <span id="winTimeText">00:00</span></p>
+            <p id="winSaveStatus" class="win-save-status"></p>
+            <button id="winSignInButton" class="text-button hidden">Save with Google</button>
         </div>
 
     </div>
@@ -104,10 +117,67 @@
 
         </div>
     </div>
+
+    <div id="profileModal" class="modal hidden">
+        <div class="modal-content profile-modal-content">
+            <div class="close-button" id="closeProfileModalButton">&times;</div>
+
+            <h1>Profile</h1>
+
+            <div class="profile-auth-row">
+                <div>
+                    <div id="profileName" class="profile-name">Signed out</div>
+                    <div id="profileStatus" class="profile-status">Sign in to save your first daily solve.</div>
+                </div>
+                <div class="profile-actions">
+                    <button id="googleSignInButton" class="text-button">Sign in</button>
+                    <button id="signOutButton" class="text-button secondary hidden">Sign out</button>
+                </div>
+            </div>
+
+            <div id="historyPanel" class="hidden">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Solved</div>
+                        <div id="solvedCountStat" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Current Streak</div>
+                        <div id="currentStreakStat" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Best Streak</div>
+                        <div id="longestStreakStat" class="stat-value">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Best Time</div>
+                        <div id="bestTimeStat" class="stat-value">--</div>
+                    </div>
+                </div>
+
+                <div class="history-month-bar">
+                    <button id="historyPrevMonthButton" class="month-button" aria-label="Previous month">&lsaquo;</button>
+                    <div id="historyMonthLabel" class="history-month-label">Month</div>
+                    <button id="historyNextMonthButton" class="month-button" aria-label="Next month">&rsaquo;</button>
+                </div>
+
+                <div id="historyCalendarGrid" class="history-calendar-viewport"></div>
+            </div>
+
+            <div id="historyMessage" class="history-message"></div>
+        </div>
+    </div>
     
     <!-- Load scripts in dependency order -->
     <script src="js/constants.js"></script>
     <script src="js/dateUtils.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebaseConfig.js"></script>
+    <script src="js/firebaseManager.js"></script>
+    <script src="js/timerManager.js"></script>
+    <script src="js/historyManager.js"></script>
     <script src="js/uiManager.js"></script>
     <script src="js/pieceManager.js"></script>
     <script src="js/gridManager.js"></script>

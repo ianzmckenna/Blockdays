@@ -28,7 +28,9 @@ const gameState = {
     pieceStates: [],
     selectedPiece: null,
     dateBlockPositions: [],
-    boardState: gameConstants.rowLengths.map(len => Array(len).fill(null))
+    boardState: gameConstants.rowLengths.map(len => Array(len).fill(null)),
+    currentDate: null,
+    isSolved: false
 };
 
 // Piece Definitions

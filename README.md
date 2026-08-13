@@ -13,25 +13,31 @@ Blockdays is a small browser-based daily puzzle game written in raw HTML, CSS, a
     - [js/](public/js/) - Scripts folder
         - [constants.js](public/js/constants.js) - sizes, PIECE definitions and `gameState`.
         - [dateUtils.js](public/js/dateUtils.js) - date logic (`initCurrentDate`).
+        - [timerManager.js](public/js/timerManager.js) - first-move timer, local persistence, and pending result storage.
+        - [firebaseConfig.js](public/js/firebaseConfig.js) - Firebase web config placeholder for Auth and Firestore.
+        - [firebaseManager.js](public/js/firebaseManager.js) - Google sign-in and per-user daily result saves.
+        - [historyManager.js](public/js/historyManager.js) - profile modal, stats, and month history calendar.
         - [uiManager.js](public/js/uiManager.js) - palette, preview, creation of DOM pieces (`drawPiecePalette`, `createPalettePiece`, `createGridPiece`, `makeDraggable`, `updatePieceViewAfterTransform`).
         - [pieceManager.js](public/js/pieceManager.js) - piece creation, transforms, placement helpers (`initPieceStates`, `preloadPieceAssets`, `isValidPlacement`, `placePiece`, `transformSelectedPiece`).
         - [gridManager.js](public/js/gridManager.js) - grid draw and game lifecycle (`drawGrid`, `updateBoardState`, `checkWinCondition`, `resetGame`).
         - [responsiveManager.js](public/js/responsiveManager.js) - responsive sizing (`calculateOptimalScale`, `applyResponsiveScale`, `getResponsiveBoardCellSize`, `getResponsivePaletteCellSize`).
         - [gameController.js](public/js/gameController.js) - initialization entrypoint (`initGame`) and UI wiring.
-        - [firebase.js](public/js/firebase.js) - Firebase SDK initialization and config.
 - [firebase.json](firebase.json) and [.firebaserc](.firebaserc) - hosting configuration and default project.
 - [package.json](package.json) and [package-lock.json](package-lock.json) - project dependencies (includes `firebase`).
 - [.gitignore](.gitignore) - Files/folders to ignore when uploaded to GitHub
 - [.github/workflows/](.github/workflows/) - GitHub Actions deploy workflows
   - [firebase-hosting-pull-request.yml](.github/workflows/firebase-hosting-pull-request.yml) - For previewing pull requests
   - [firebase-hosting-merge.yml](.github/workflows/firebase-hosting-merge.yml) - For deploying on merge with `main`
-- [firestore.rules](firestore.rules) - Firestore access rules (not implemented)
+- [firestore.rules](firestore.rules) - owner-only player history rules.
 - [firestore.indexes.json](firestore.indexes.json) - Not sure what this is really for :D (might have to do with [firestore.rules](firestore.rules))
 - [inspo.jpg](inspo.jpg) - The inspiration for everything
 
 ## Key features
 
 - Daily-blocked squares computed from the current date via [`initCurrentDate`](public/js/dateUtils.js).
+- First-move daily timer persisted in browser storage until the puzzle is solved.
+- Google account sign-in and private Firestore history by player.
+- Profile modal with solved count, streaks, best time, and month calendar history.
 - Responsive scaling managed by [`initResponsiveManager`](public/js/responsiveManager.js) and [`calculateOptimalScale`](public/js/responsiveManager.js).
 - Piece palette + preview UI implemented in [`drawPiecePalette`](public/js/uiManager.js) and updated by [`updatePieceViewAfterTransform`](public/js/uiManager.js).
 - Drag & drop placement with validation via [`makeDraggable`](public/js/uiManager.js), [`isValidPlacement`](public/js/pieceManager.js) and [`placePiece`](public/js/pieceManager.js).
@@ -49,6 +55,14 @@ Blockdays is a small browser-based daily puzzle game written in raw HTML, CSS, a
 
 2. Open the localhost link given by the server in a browser.
    - If your mobile device is on the same network, this link is available there as well for testing.
+
+## Firebase Account Setup
+
+1. In the Firebase Console for `blockdays-iwnl`, open Authentication and click Get started if Auth has not been initialized yet.
+2. Enable Google as an Authentication provider.
+3. Add the deployed domain and local test domains, such as `localhost` and `127.0.0.1`, under Authentication > Settings > Authorized domains.
+4. Copy the web app config and paste it into [public/js/firebaseConfig.js](public/js/firebaseConfig.js).
+5. Deploy the updated [firestore.rules](firestore.rules) before relying on saved player history.
 
 ## Assets
 

@@ -73,6 +73,10 @@ function updateBoardState() {
 
 // Check if the puzzle is solved
 function checkWinCondition() {
+    if (gameState.isSolved) {
+        return;
+    }
+
     // Count how many pieces are on the grid
     const piecesOnGrid = gameState.pieceStates.filter(p => p.isOnGrid).length;
     
@@ -91,6 +95,7 @@ function checkWinCondition() {
     
     // Check if all pieces are on the grid, all valid cells are covered except date blocks
     if (piecesOnGrid === gameConstants.pieceCount && coveredCellCount === validCellCount) {
+        gameState.isSolved = true;
 
         const pieces = document.querySelectorAll('.on-grid');
 
@@ -111,11 +116,21 @@ function checkWinCondition() {
         if (winMessage) {
             winMessage.classList.remove('hidden');
         }
+
+        const result = typeof completeDailyTimer === 'function'
+            ? completeDailyTimer()
+            : null;
+
+        if (result && typeof handleDailySolveCompleted === 'function') {
+            handleDailySolveCompleted(result);
+        }
     }
 }
 
 // Reset the game
 function resetGame() {
+    gameState.isSolved = false;
+
     // Reset pieces to original state
     gameState.pieceStates.forEach(piece => {
         piece.shape = JSON.parse(JSON.stringify(pieceDefinitions[piece.id].shape));
