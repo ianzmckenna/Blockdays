@@ -9,7 +9,7 @@ function calculateOptimalScale() {
     const windowHeight = window.innerHeight;
     const topAdShell = document.querySelector('.top-ad-shell');
     const bodyStyles = window.getComputedStyle(document.body);
-    const reservedTopSpace = (topAdShell?.offsetHeight || 0) + parseFloat(bodyStyles.paddingTop || 0);
+    const reservedTopSpace = (topAdShell?.offsetHeight || 0) + Number.parseFloat(bodyStyles.paddingTop || 0);
 
     console.log(`Window size: ${windowWidth}x${windowHeight}`);
     

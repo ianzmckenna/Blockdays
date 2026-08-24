@@ -54,10 +54,9 @@ function initFirebaseManager() {
 
 function hasUsableFirebaseConfig(config) {
     return Boolean(
-        config &&
-        config.apiKey &&
-        config.projectId &&
-        config.appId
+        config?.apiKey &&
+        config?.projectId &&
+        config?.appId
     );
 }
 
