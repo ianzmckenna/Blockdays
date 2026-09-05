@@ -458,12 +458,13 @@ button {
 }
 
 .profile-modal-content {
-    width: min(92%, calc(560px * var(--game-scale)));
-    max-width: 560px;
+    width: min(calc(100% - 24px), calc(492px * var(--game-scale)));
+    max-width: calc(492px * var(--game-scale));
 }
 
 .profile-auth-row {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: calc(14px * var(--game-scale));
@@ -474,6 +475,7 @@ button {
 .profile-name {
     font-size: calc(1rem * var(--game-scale));
     color: #222;
+    overflow-wrap: anywhere;
 }
 
 .profile-status,
@@ -481,6 +483,11 @@ button {
     font-size: calc(0.78rem * var(--game-scale));
     color: #666;
     line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.profile-auth-row > div:first-child {
+    min-width: 0;
 }
 
 .profile-actions {
@@ -636,9 +643,13 @@ button {
 }
 
 .history-message {
-    min-height: calc(1.2rem * var(--game-scale));
-    margin-top: calc(10px * var(--game-scale));
+    min-height: calc(1rem * var(--game-scale));
+    margin-top: calc(16px * var(--game-scale));
     text-align: center;
+}
+
+.history-message:empty {
+    display: none;
 }
 
 @media (max-width: 480px) {
