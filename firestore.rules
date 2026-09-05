@@ -14,6 +14,54 @@ service cloud.firestore {
       return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}$');
     }
 
+    function validPlacement(value) {
+      return value is map
+        && value.keys().hasOnly(['pieceId', 'pieceName', 'anchor', 'orientation'])
+        && value.pieceId is int
+        && value.pieceId >= 0
+        && value.pieceId <= 7
+        && value.pieceName is string
+        && value.pieceName.size() > 0
+        && value.pieceName.size() <= 32
+        && value.anchor is map
+        && value.anchor.keys().hasOnly(['x', 'y'])
+        && value.anchor.x is int
+        && value.anchor.x >= 0
+        && value.anchor.x <= 6
+        && value.anchor.y is int
+        && value.anchor.y >= 0
+        && value.anchor.y <= 6
+        && value.orientation is map
+        && value.orientation.keys().hasOnly(['rotation', 'flipH', 'flipV', 'shapeKey'])
+        && value.orientation.rotation is int
+        && (value.orientation.rotation == 0
+          || value.orientation.rotation == 90
+          || value.orientation.rotation == 180
+          || value.orientation.rotation == 270)
+        && value.orientation.flipH is bool
+        && value.orientation.flipV is bool
+        && value.orientation.shapeKey is string
+        && value.orientation.shapeKey.matches('^[01]+(/[01]+)*$');
+    }
+
+    function validSolution(value) {
+      return value is map
+        && value.keys().hasOnly(['canonicalKey', 'placements'])
+        && value.canonicalKey is string
+        && value.canonicalKey.size() > 0
+        && value.canonicalKey.size() <= 2048
+        && value.placements is list
+        && value.placements.size() == 8
+        && validPlacement(value.placements[0])
+        && validPlacement(value.placements[1])
+        && validPlacement(value.placements[2])
+        && validPlacement(value.placements[3])
+        && validPlacement(value.placements[4])
+        && validPlacement(value.placements[5])
+        && validPlacement(value.placements[6])
+        && validPlacement(value.placements[7]);
+    }
+
     function validDailyResult(userId, dateKey) {
       return owns(userId)
         && request.resource.data.keys().hasOnly([
@@ -22,7 +70,8 @@ service cloud.firestore {
           'completedAt',
           'puzzleMonth',
           'puzzleDay',
-          'timezone'
+          'timezone',
+          'solution'
         ])
         && request.resource.data.dateKey == dateKey
         && validDateKey(request.resource.data.dateKey)
@@ -38,7 +87,8 @@ service cloud.firestore {
         && request.resource.data.puzzleDay <= 31
         && request.resource.data.timezone is string
         && request.resource.data.timezone.size() > 0
-        && request.resource.data.timezone.size() <= 64;
+        && request.resource.data.timezone.size() <= 64
+        && validSolution(request.resource.data.solution);
     }
 
     match /users/{userId} {

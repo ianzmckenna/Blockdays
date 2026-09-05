@@ -205,6 +205,7 @@ async function saveDailyResultForUser(uid, result) {
         puzzleMonth: result.puzzleMonth,
         puzzleDay: result.puzzleDay,
         timezone: result.timezone,
+        solution: result.solution,
         completedAt: window.firebase.firestore.FieldValue.serverTimestamp()
     };
 

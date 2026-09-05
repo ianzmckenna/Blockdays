@@ -37,6 +37,7 @@ Blockdays is a small browser-based daily puzzle game written in raw HTML, CSS, a
 - Daily-blocked squares computed from the current date via [`initCurrentDate`](public/js/dateUtils.js).
 - First-move daily timer persisted in browser storage until the puzzle is solved.
 - Google account sign-in and private Firestore history by player.
+- Authenticated daily results store the solve duration and the completed solution as a canonical key plus readable piece placements.
 - Profile modal with solved count, streaks, best time, and month calendar history.
 - Responsive scaling managed by [`initResponsiveManager`](public/js/responsiveManager.js) and [`calculateOptimalScale`](public/js/responsiveManager.js).
 - Piece palette + preview UI implemented in [`drawPiecePalette`](public/js/uiManager.js) and updated by [`updatePieceViewAfterTransform`](public/js/uiManager.js).

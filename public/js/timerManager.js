@@ -149,6 +149,47 @@ function clearFrozenDailyTimer() {
     return true;
 }
 
+function getPlacementShapeKey(shape) {
+    return shape.map(row => row.join('')).join('/');
+}
+
+function buildCompletedSolution() {
+    const placements = gameState.pieceStates
+        .filter(piece => piece.isOnGrid && piece.gridPlacementCoords)
+        .map(piece => {
+            const [x, y] = piece.gridPlacementCoords;
+            const rotation = ((piece.rotation % 360) + 360) % 360; // Normalize, fix negatives, then fix positives
+
+            return {
+                pieceId: piece.id,
+                pieceName: pieceDefinitions[piece.id]?.name || `Piece ${piece.id}`,
+                anchor: { x, y },
+                orientation: {
+                    rotation,
+                    flipH: Boolean(piece.isFlippedH),
+                    flipV: Boolean(piece.isFlippedV),
+                    shapeKey: getPlacementShapeKey(piece.shape)
+                }
+            };
+        })
+        .sort((a, b) => a.pieceId - b.pieceId);
+
+    const canonicalKey = placements.map(placement => [
+        placement.pieceId,
+        '@',
+        placement.anchor.x,
+        ',',
+        placement.anchor.y,
+        '|',
+        placement.orientation.shapeKey
+    ].join('')).join(';');
+
+    return {
+        canonicalKey,
+        placements
+    };
+}
+
 function buildDailyResultPayload(durationMs) {
     const currentDate = gameState.currentDate || getLocalPuzzleDate();
 
@@ -157,7 +198,8 @@ function buildDailyResultPayload(durationMs) {
         durationMs,
         puzzleMonth: currentDate.month,
         puzzleDay: currentDate.day,
-        timezone: currentDate.timezone
+        timezone: currentDate.timezone,
+        solution: buildCompletedSolution()
     };
 }
 
