@@ -40,7 +40,6 @@ body {
     align-items: center;
     justify-content: flex-start;
     min-height: 100vh;
-    padding-top: var(--top-ad-gap);
 }
 
 .top-ad-shell {
@@ -560,6 +559,7 @@ button {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: calc(5px * var(--game-scale));
+    padding: 2px;
     width: 100%;
 }
 
@@ -592,13 +592,17 @@ button {
 }
 
 .history-day {
-    min-height: calc(62px * var(--game-scale));
+    min-height: calc(50px * var(--game-scale));
     border: 1px solid #ddd;
     border-radius: calc(6px * var(--game-scale));
     padding: calc(5px * var(--game-scale));
     background-color: #fafafa;
     color: #555;
     text-align: left;
+}
+
+.history-day[data-puzzle-day-key] {
+    cursor: pointer;
 }
 
 .history-day.empty {
@@ -612,21 +616,57 @@ button {
     color: #1f5a2a;
 }
 
+.history-day.selected {
+    border-color: #315f8f;
+    box-shadow: 0 0 0 2px rgba(49, 95, 143, 0.18);
+}
+
 .history-day-number {
     font-size: calc(0.72rem * var(--game-scale));
 }
 
-.history-day-times {
-    margin-top: calc(4px * var(--game-scale));
+.history-day-detail {
+    margin-top: calc(12px * var(--game-scale));
+    padding: calc(12px * var(--game-scale));
+    border-top: 1px solid #d6d6d6;
+}
+
+.history-day-detail-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(10px * var(--game-scale));
+}
+
+.history-day-detail h3 {
+    margin: 0;
+    color: #222;
+    font-size: calc(0.95rem * var(--game-scale));
+}
+
+.history-day-detail-summary {
+    margin: 0;
+    color: #666;
+    font-size: calc(0.78rem * var(--game-scale));
+    white-space: nowrap;
+}
+
+.history-detail-times {
     display: flex;
     flex-direction: column;
+    padding: calc(8px * var(--game-scale));
+    padding-bottom: 0;
     gap: calc(2px * var(--game-scale));
 }
 
-.history-day-time {
-    font-size: calc(0.62rem * var(--game-scale));
+.history-detail-time {
+    font-size: calc(0.75rem * var(--game-scale));
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+}
+
+.history-detail-time-empty {
+    color: #aaa;
 }
 
 .history-loading {

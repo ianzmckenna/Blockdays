@@ -4,6 +4,10 @@ const historyState = {
     visibleMonthIndex: null,
     resultsByDate: {},
     resultsByPuzzleDay: {},
+    selectedPuzzleDayKey: null,
+    selectedDayDiscoveries: [],
+    selectedDayMetadata: null,
+    selectedDayDetailsLoading: false,
     isLoading: false,
     isAnimatingMonth: false
 };
@@ -22,6 +26,10 @@ function initHistoryManager() {
             } else {
                 historyState.resultsByDate = {};
                 historyState.resultsByPuzzleDay = {};
+                historyState.selectedPuzzleDayKey = null;
+                historyState.selectedDayDiscoveries = [];
+                historyState.selectedDayMetadata = null;
+                historyState.selectedDayDetailsLoading = false;
                 renderHistory();
             }
         });
@@ -87,6 +95,24 @@ function bindHistoryEvents() {
 
     if (nextButton) {
         nextButton.addEventListener('click', () => changeHistoryMonth(1));
+    }
+
+    const calendarViewport = document.getElementById('historyCalendarGrid');
+    if (calendarViewport) {
+        calendarViewport.addEventListener('click', (event) => {
+            const dayButton = event.target.closest('.history-day[data-puzzle-day-key]');
+            if (dayButton) selectHistoryDay(dayButton.dataset.puzzleDayKey);
+        });
+
+        calendarViewport.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+
+            const dayButton = event.target.closest('.history-day[data-puzzle-day-key]');
+            if (!dayButton) return;
+
+            event.preventDefault();
+            selectHistoryDay(dayButton.dataset.puzzleDayKey);
+        });
     }
 }
 
@@ -195,12 +221,17 @@ function changeHistoryMonth(delta) {
     if (historyState.isAnimatingMonth) return;
 
     historyState.visibleMonthIndex = (historyState.visibleMonthIndex + delta + 12) % 12;
+    historyState.selectedPuzzleDayKey = null;
+    historyState.selectedDayDiscoveries = [];
+    historyState.selectedDayMetadata = null;
+    historyState.selectedDayDetailsLoading = false;
     renderHistory(delta);
 }
 
 function renderHistory(monthDelta = 0) {
     renderStats();
     renderHistoryCalendar(monthDelta);
+    renderSelectedHistoryDay();
 }
 
 function renderStats() {
@@ -278,33 +309,164 @@ function buildHistoryCalendarPage(monthIndex) {
         const puzzleDayKey = getPuzzleDayKey(monthIndex, dayNumber);
         const results = historyState.resultsByPuzzleDay[puzzleDayKey] || [];
 
+        cell.setAttribute('role', 'button');
+        cell.setAttribute('tabindex', '0');
+        cell.dataset.puzzleDayKey = puzzleDayKey;
+        cell.setAttribute('aria-label', `View stats for ${months[monthIndex]} ${dayNumber}`);
+        cell.setAttribute('aria-pressed', String(historyState.selectedPuzzleDayKey === puzzleDayKey));
+
         const dayLabel = document.createElement('div');
         dayLabel.className = 'history-day-number';
         dayLabel.textContent = String(dayNumber);
         cell.appendChild(dayLabel);
 
         if (results.length > 0) {
-            const timeList = document.createElement('div');
-            timeList.className = 'history-day-times';
             cell.classList.add('solved');
-            cell.title = results
-                .map(formatHistoryResultTitle)
-                .join('\n');
-
-            results.forEach(result => {
-                const timeLabel = document.createElement('div');
-                timeLabel.className = 'history-day-time';
-                timeLabel.textContent = formatHistoryResultLabel(result);
-                timeList.appendChild(timeLabel);
-            });
-
-            cell.appendChild(timeList);
         }
+        cell.classList.toggle('selected', historyState.selectedPuzzleDayKey === puzzleDayKey);
+        
 
         calendarPage.appendChild(cell);
     }
 
     return calendarPage;
+}
+
+function selectHistoryDay(puzzleDayKey) {
+    if (!puzzleDayKey) return;
+
+    historyState.selectedPuzzleDayKey = historyState.selectedPuzzleDayKey === puzzleDayKey
+        ? null
+        : puzzleDayKey;
+    historyState.selectedDayDiscoveries = [];
+    historyState.selectedDayMetadata = null;
+    historyState.selectedDayDetailsLoading = false;
+
+    renderHistoryCalendar();
+    renderSelectedHistoryDay();
+
+    if (historyState.selectedPuzzleDayKey) {
+        loadSelectedHistoryDayDetails(historyState.selectedPuzzleDayKey);
+    }
+}
+
+function renderSelectedHistoryDay() {
+    const detail = document.getElementById('historyDayDetail');
+    if (!detail) return;
+
+    const puzzleDayKey = historyState.selectedPuzzleDayKey;
+    if (!puzzleDayKey) {
+        detail.classList.add('hidden');
+        detail.replaceChildren();
+        return;
+    }
+    const results = historyState.resultsByPuzzleDay[puzzleDayKey] || [];
+
+    const [monthPart, dayPart] = puzzleDayKey.split('-');
+    const monthIndex = Number(monthPart) - 1;
+    const header = document.createElement('div');
+    header.className = 'history-day-detail-header';
+
+    const heading = document.createElement('h3');
+    heading.textContent = `${months[monthIndex]} ${Number(dayPart)}`;
+
+    const summary = document.createElement('p');
+    summary.className = 'history-day-detail-summary';
+    summary.textContent = historyState.selectedDayDetailsLoading
+        ? 'Solutions Found: Loading...'
+        : `Solutions Found: ${getSelectedDiscoveryCount(results)} / ${getSolutionTotalLabel(historyState.selectedDayMetadata)}`;
+
+    header.append(heading, summary);
+
+    const timeList = document.createElement('div');
+    timeList.className = 'history-detail-times';
+    if (results.length === 0) {
+        const emptyRow = document.createElement('div');
+        emptyRow.className = 'history-detail-time history-detail-time-empty';
+        emptyRow.textContent = 'Solve the puzzle on this day to save your time!';
+        timeList.appendChild(emptyRow);
+    }
+
+    results.forEach(result => {
+        const timeRow = document.createElement('div');
+        timeRow.className = 'history-detail-time';
+        timeRow.textContent = formatHistoryResultTitle(result);
+        timeList.appendChild(timeRow);
+    });
+
+    detail.classList.remove('hidden');
+    detail.replaceChildren(header, timeList);
+}
+
+async function loadSelectedHistoryDayDetails(puzzleDayKey) {
+    historyState.selectedDayDetailsLoading = true;
+    renderSelectedHistoryDay();
+
+    const detailReads = [
+        {
+            name: 'solution metadata',
+            fallback: null,
+            load: typeof loadPuzzleSolutionMetadata === 'function'
+                ? () => loadPuzzleSolutionMetadata(puzzleDayKey)
+                : null
+        },
+        {
+            name: 'solution discoveries',
+            fallback: [],
+            load: typeof loadSolutionDiscoveries === 'function'
+                ? () => loadSolutionDiscoveries(puzzleDayKey)
+                : null
+        }
+    ];
+
+    const results = await Promise.allSettled(
+        detailReads.map(({ load, fallback }) => load ? load() : Promise.resolve(fallback))
+    );
+
+    if (historyState.selectedPuzzleDayKey !== puzzleDayKey) return;
+
+    const [metadataResult, discoveriesResult] = results;
+    historyState.selectedDayMetadata = metadataResult.status === 'fulfilled'
+        ? metadataResult.value
+        : null;
+    historyState.selectedDayDiscoveries = discoveriesResult.status === 'fulfilled'
+        ? discoveriesResult.value
+        : [];
+
+    results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+            const error = result.reason;
+            console.warn(
+                `Unable to load ${detailReads[index].name} for ${puzzleDayKey}:`,
+                error?.code || 'unknown-error',
+                error?.message || error
+            );
+        }
+    });
+
+    historyState.selectedDayDetailsLoading = false;
+    renderSelectedHistoryDay();
+}
+
+function getSolutionTotalLabel(metadata) {
+    const solutionCount = Number(metadata?.solutionCount);
+    return Number.isInteger(solutionCount) && solutionCount >= 0
+        ? String(solutionCount)
+        : 'unavailable';
+}
+
+function getSelectedDiscoveryCount(results) {
+    const solutionKeys = new Set();
+
+    results.forEach(result => {
+        if (result.solution?.canonicalKey) solutionKeys.add(result.solution.canonicalKey);
+    });
+
+    historyState.selectedDayDiscoveries.forEach(discovery => {
+        if (discovery.canonicalKey) solutionKeys.add(discovery.canonicalKey);
+    });
+
+    return solutionKeys.size;
 }
 
 function animateHistoryMonthChange(calendarViewport, existingCalendarPage, newCalendarPage, monthDelta) {
@@ -400,7 +562,7 @@ function formatHistoryResultTitle(result) {
     const year = getResultYear(result);
     const duration = formatDuration(result.durationMs);
 
-    return year ? `${year}: ${duration}` : duration;
+    return year ? `${year} - ${duration}` : duration;
 }
 
 function getYearAgnosticDaysInMonth(monthIndex) {

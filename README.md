@@ -28,7 +28,7 @@ Blockdays is a small browser-based daily puzzle game written in raw HTML, CSS, a
 - [.github/workflows/](.github/workflows/) - GitHub Actions deploy workflows
   - [firebase-hosting-pull-request.yml](.github/workflows/firebase-hosting-pull-request.yml) - For previewing pull requests
   - [firebase-hosting-merge.yml](.github/workflows/firebase-hosting-merge.yml) - For deploying on merge with `main`
-- [firestore.rules](firestore.rules) - owner-only player history rules.
+- [firestore.rules](firestore.rules) - owner-only player history and discovery rules, plus read-only generated solution metadata.
 - [firestore.indexes.json](firestore.indexes.json) - Not sure what this is really for :D (might have to do with [firestore.rules](firestore.rules))
 - [inspo.jpg](inspo.jpg) - The inspiration for everything
 
@@ -38,7 +38,7 @@ Blockdays is a small browser-based daily puzzle game written in raw HTML, CSS, a
 - First-move daily timer persisted in browser storage until the puzzle is solved.
 - Google account sign-in and private Firestore history by player.
 - Authenticated daily results store the solve duration and the completed solution as a canonical key plus readable piece placements.
-- Profile modal with solved count, streaks, best time, and month calendar history.
+- Profile modal with solved count, streaks, best time, and month calendar history. Select a solved day to see first times by year and unique solutions discovered versus the generated total.
 - Responsive scaling managed by [`initResponsiveManager`](public/js/responsiveManager.js) and [`calculateOptimalScale`](public/js/responsiveManager.js).
 - Piece palette + preview UI implemented in [`drawPiecePalette`](public/js/uiManager.js) and updated by [`updatePieceViewAfterTransform`](public/js/uiManager.js).
 - Drag & drop placement with validation via [`makeDraggable`](public/js/uiManager.js), [`isValidPlacement`](public/js/pieceManager.js) and [`placePiece`](public/js/pieceManager.js).
@@ -64,6 +64,12 @@ Blockdays is a small browser-based daily puzzle game written in raw HTML, CSS, a
 3. Add the deployed domain and local test domains, such as `localhost` and `127.0.0.1`, under Authentication > Settings > Authorized domains.
 4. Copy the web app config and paste it into [public/js/firebaseConfig.js](public/js/firebaseConfig.js).
 5. Deploy the updated [firestore.rules](firestore.rules) before relying on saved player history.
+
+## Solution history data
+
+The solution generator writes one metadata document per recurring puzzle day at `puzzleSolutions/{MM-DD}`. The client reads its `solutionCount` for the selected history day; if metadata has not been generated, the total is shown as unavailable.
+
+Each signed-in player's distinct completed solutions are stored at `users/{userId}/solutionDiscoveries/{MM-DD}/solutions/{solutionId}`. The existing `users/{userId}/dailyResults/{YYYY-MM-DD}` record remains the immutable first completion time for that calendar year. Later replay attempts can add unique discoveries without replacing that first time.
 
 ## Assets
 

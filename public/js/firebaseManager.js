@@ -97,34 +97,77 @@ async function signOutOfBlockdays() {
 }
 
 async function saveDailySolveResult(result) {
+    console.info('[Firebase] saveDailySolveResult started', {
+        dateKey: result?.dateKey || null,
+        hasUser: Boolean(firebaseState.user),
+        hasDatabase: Boolean(firebaseState.db),
+        isReady: firebaseState.isReady
+    });
+
     if (!result?.dateKey) return { status: 'invalid' };
 
     if (!firebaseState.user || !firebaseState.db) {
+        console.warn('[Firebase] Daily result queued locally because Firebase user or database is unavailable.', {
+            dateKey: result.dateKey,
+            hasUser: Boolean(firebaseState.user),
+            hasDatabase: Boolean(firebaseState.db)
+        });
         savePendingDailyResult(result);
         return { status: 'pending' };
     }
 
+    console.info('[Firebase] Saving daily result to Firestore', {
+        uid: firebaseState.user.uid,
+        dateKey: result.dateKey
+    });
     return saveDailyResultForUser(firebaseState.user.uid, result);
 }
 
 async function handleDailySolveCompleted(result) {
     updateWinSolveTime(result);
     setWinSaveStatus('Saving...', false);
+    console.info('[Firebase] Solve completed; starting save operations', {
+        dateKey: result?.dateKey || null,
+        puzzleMonth: result?.puzzleMonth || null,
+        puzzleDay: result?.puzzleDay || null,
+        hasSolution: Boolean(result?.solution?.canonicalKey),
+        uid: firebaseState.user?.uid || null
+    });
 
     try {
         const saveResult = await saveDailySolveResult(result);
+        console.info('[Firebase] Daily result save finished', {
+            status: saveResult.status,
+            dateKey: result.dateKey
+        });
+        const discoveryResult = await saveSolutionDiscovery(result);
+        console.info('[Firebase] Solution discovery save finished', {
+            status: discoveryResult.status,
+            dateKey: result.dateKey,
+            puzzleDayKey: getDiscoveryPuzzleDayKey(result)
+        });
         updateWinSaveStatus(saveResult);
 
         if (saveResult.status === 'saved' || saveResult.status === 'exists') {
             clearPendingDailyResult(result.dateKey);
         }
 
+        if (discoveryResult.status === 'saved' || discoveryResult.status === 'exists') {
+            clearPendingSolutionDiscovery(result);
+        }
+
         if (typeof refreshHistoryAfterSave === 'function') {
             refreshHistoryAfterSave();
         }
     } catch (error) {
-        console.error('Unable to save solve result:', error);
+        console.error('[Firebase] Unable to save solve result.', {
+            code: error?.code || 'unknown-error',
+            message: error?.message || String(error),
+            uid: firebaseState.user?.uid || null,
+            dateKey: result?.dateKey || null
+        }, error);
         savePendingDailyResult(result);
+        savePendingSolutionDiscovery(result);
         if (firebaseState.user) {
             setWinSaveStatus('Time saved on this device. Sync will retry later.', false);
         } else {
@@ -191,30 +234,158 @@ async function saveDailyResultForUser(uid, result) {
         .collection('dailyResults')
         .doc(result.dateKey);
 
-    const existing = await docRef.get();
-    if (existing.exists) {
-        return {
-            status: 'exists',
-            result: existing.data()
+    try {
+        const existing = await docRef.get();
+        if (existing.exists) {
+            return {
+                status: 'exists',
+                result: existing.data()
+            };
+        }
+
+        const sanitizedSolution = sanitizeSolutionForFirestore(result.solution);
+        const payload = {
+            dateKey: result.dateKey,
+            durationMs: result.durationMs,
+            puzzleMonth: result.puzzleMonth,
+            puzzleDay: result.puzzleDay,
+            timezone: result.timezone,
+            completedAt: window.firebase.firestore.FieldValue.serverTimestamp()
         };
+
+        if (sanitizedSolution) {
+            payload.solution = sanitizedSolution;
+        }
+
+        await docRef.set(payload);
+
+        return {
+            status: 'saved',
+            result: payload
+        };
+    } catch (error) {
+        throw error;
+    }
+}
+
+function sanitizeSolutionForFirestore(solution) {
+    if (!solution?.canonicalKey || !Array.isArray(solution.placements)) {
+        return null;
     }
 
-    const payload = {
-        dateKey: result.dateKey,
-        durationMs: result.durationMs,
-        puzzleMonth: result.puzzleMonth,
-        puzzleDay: result.puzzleDay,
-        timezone: result.timezone,
-        solution: result.solution,
-        completedAt: window.firebase.firestore.FieldValue.serverTimestamp()
-    };
+    const placements = solution.placements.map(placement => ({
+        pieceId: placement.pieceId,
+        pieceName: placement.pieceName,
+        anchor: placement.anchor,
+        orientation: {
+            rotation: placement.orientation?.rotation,
+            flipH: Boolean(placement.orientation?.flipH),
+            flipV: Boolean(placement.orientation?.flipV),
+            shapeKey: placement.orientation?.shapeKey
+                || placement.shape?.map(row => row.join('')).join('/')
+        }
+    }));
 
-    await docRef.set(payload);
+    const isValid = solution.placements.length === 8
+        && placements.every(placement => (
+            Number.isInteger(placement.pieceId)
+            && typeof placement.pieceName === 'string'
+            && Number.isInteger(placement.anchor?.x)
+            && Number.isInteger(placement.anchor?.y)
+            && Number.isInteger(placement.orientation.rotation)
+            && [0, 90, 180, 270].includes(placement.orientation.rotation)
+            && typeof placement.orientation.shapeKey === 'string'
+            && /^[01]+(\/[01]+)*$/.test(placement.orientation.shapeKey)
+        ));
+
+    if (!isValid) return null;
 
     return {
-        status: 'saved',
-        result: payload
+        canonicalKey: solution.canonicalKey,
+        placements
     };
+}
+
+async function saveSolutionDiscovery(result) {
+    const puzzleDayKey = getDiscoveryPuzzleDayKey(result);
+    const solutionId = result?.solution?.canonicalKey
+        ? getSolutionDiscoveryId(result.solution.canonicalKey)
+        : null;
+
+    if (!result?.dateKey || !solutionId) {
+        return { status: 'invalid' };
+    }
+
+    if (!firebaseState.user || !firebaseState.db) {
+        savePendingSolutionDiscovery(result);
+        return { status: 'pending' };
+    }
+
+    const docRef = firebaseState.db
+        .collection('users')
+        .doc(firebaseState.user.uid)
+        .collection('solutionDiscoveries')
+        .doc(puzzleDayKey)
+        .collection('solutions')
+        .doc(solutionId);
+
+    try {
+        const existing = await docRef.get();
+        if (existing.exists) return { status: 'exists', result: existing.data() };
+
+        const payload = {
+            puzzleDayKey,
+            solutionId,
+            canonicalKey: result.solution.canonicalKey,
+            dateKey: result.dateKey,
+            durationMs: result.durationMs,
+            completedAt: window.firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await docRef.set(payload);
+        return { status: 'saved', result: payload };
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function loadSolutionDiscoveries(puzzleDayKey) {
+    if (!firebaseState.user || !firebaseState.db || !puzzleDayKey) return [];
+
+    const snapshot = await firebaseState.db
+        .collection('users')
+        .doc(firebaseState.user.uid)
+        .collection('solutionDiscoveries')
+        .doc(puzzleDayKey)
+        .collection('solutions')
+        .orderBy('dateKey')
+        .get();
+
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+async function loadPuzzleSolutionMetadata(puzzleDayKey) {
+    if (!firebaseState.db || !puzzleDayKey) return null;
+
+    const doc = await firebaseState.db
+        .collection('puzzleSolutions')
+        .doc(puzzleDayKey)
+        .get();
+
+    return doc.exists ? doc.data() : null;
+}
+
+function getDiscoveryPuzzleDayKey(result) {
+    if (result?.puzzleMonth && result?.puzzleDay) {
+        return `${String(result.puzzleMonth).padStart(2, '0')}-${String(result.puzzleDay).padStart(2, '0')}`;
+    }
+
+    const [, month, day] = result?.dateKey?.split('-') || [];
+    return month && day ? `${month}-${day}` : null;
+}
+
+function getSolutionDiscoveryId(canonicalKey) {
+    return canonicalKey.replaceAll('/', '~');
 }
 
 async function syncPendingDailyResults() {
@@ -234,6 +405,18 @@ async function syncPendingDailyResults() {
             }
         } catch (error) {
             console.warn('Unable to sync pending result:', error);
+        }
+    }
+
+    const pendingDiscoveries = getPendingSolutionDiscoveries();
+    for (const result of pendingDiscoveries) {
+        try {
+            const discoveryResult = await saveSolutionDiscovery(result);
+            if (discoveryResult.status === 'saved' || discoveryResult.status === 'exists') {
+                clearPendingSolutionDiscovery(result);
+            }
+        } catch (error) {
+            console.warn('Unable to sync pending solution discovery:', error);
         }
     }
 

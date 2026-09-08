@@ -14,6 +14,10 @@ service cloud.firestore {
       return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}$');
     }
 
+    function validPuzzleDayKey(value) {
+      return value is string && value.matches('^(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$');
+    }
+
     function validPlacement(value) {
       return value is map
         && value.keys().hasOnly(['pieceId', 'pieceName', 'anchor', 'orientation'])
@@ -78,7 +82,6 @@ service cloud.firestore {
         && request.resource.data.durationMs is int
         && request.resource.data.durationMs >= 0
         && request.resource.data.durationMs <= 604800000
-        && request.resource.data.completedAt == request.time
         && request.resource.data.puzzleMonth is int
         && request.resource.data.puzzleMonth >= 1
         && request.resource.data.puzzleMonth <= 12
@@ -88,7 +91,36 @@ service cloud.firestore {
         && request.resource.data.timezone is string
         && request.resource.data.timezone.size() > 0
         && request.resource.data.timezone.size() <= 64
-        && validSolution(request.resource.data.solution);
+        && (!request.resource.data.keys().hasAny(['solution'])
+          || (request.resource.data.solution is map
+            && request.resource.data.solution.keys().hasOnly(['canonicalKey', 'placements'])
+            && request.resource.data.solution.canonicalKey is string
+            && request.resource.data.solution.canonicalKey.size() > 0
+            && request.resource.data.solution.canonicalKey.size() <= 2048));
+    }
+
+    function validSolutionDiscovery(userId, puzzleDayKey, solutionId) {
+      return owns(userId)
+        && validPuzzleDayKey(puzzleDayKey)
+        && request.resource.data.keys().hasOnly([
+          'puzzleDayKey',
+          'solutionId',
+          'canonicalKey',
+          'dateKey',
+          'durationMs',
+          'completedAt'
+        ])
+        && request.resource.data.puzzleDayKey == puzzleDayKey
+        && request.resource.data.solutionId is string
+        && request.resource.data.solutionId == solutionId
+        && request.resource.data.canonicalKey is string
+        && request.resource.data.canonicalKey.size() > 0
+        && request.resource.data.canonicalKey.size() <= 2048
+        && request.resource.data.dateKey is string
+        && validDateKey(request.resource.data.dateKey)
+        && request.resource.data.durationMs is int
+        && request.resource.data.durationMs >= 0
+        && request.resource.data.durationMs <= 604800000
     }
 
     match /users/{userId} {
@@ -100,6 +132,17 @@ service cloud.firestore {
         allow create: if validDailyResult(userId, dateKey);
         allow update, delete: if false;
       }
+
+      match /solutionDiscoveries/{puzzleDayKey}/solutions/{solutionId} {
+        allow read: if owns(userId);
+        allow create: if validSolutionDiscovery(userId, puzzleDayKey, solutionId);
+        allow update, delete: if false;
+      }
+    }
+
+    match /puzzleSolutions/{puzzleDayKey} {
+      allow read: if validPuzzleDayKey(puzzleDayKey);
+      allow write: if false;
     }
 
     match /{document=**} {

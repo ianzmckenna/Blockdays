@@ -72,6 +72,11 @@ function setupButtonEventListeners() {
             resetButton.addEventListener('click', resetGame);
         }
 
+        const findAnotherSolutionButton = document.getElementById('findAnotherSolutionButton');
+        if (findAnotherSolutionButton) {
+            findAnotherSolutionButton.addEventListener('click', startAnotherSolution);
+        }
+
         const buttons = [resetButton, rotateCWButton, rotateCCWButton, flipHButton, flipVButton];
 
         // Add styling touch event listeners for mobile functionality

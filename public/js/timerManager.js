@@ -2,6 +2,7 @@
 
 const TIMER_STORAGE_PREFIX = 'blockdays.timer.';
 const PENDING_RESULT_STORAGE_PREFIX = 'blockdays.pendingResult.';
+const PENDING_DISCOVERY_STORAGE_PREFIX = 'blockdays.pendingDiscovery.';
 
 const timerState = {
     dateKey: null,
@@ -27,6 +28,10 @@ function getTimerStorageKey(dateKey = timerState.dateKey) {
 
 function getPendingResultStorageKey(dateKey) {
     return `${PENDING_RESULT_STORAGE_PREFIX}${dateKey}`;
+}
+
+function getPendingDiscoveryStorageKey(result) {
+    return `${PENDING_DISCOVERY_STORAGE_PREFIX}${result.dateKey}.${getSolutionDiscoveryId(result.solution.canonicalKey)}`;
 }
 
 function loadTimerState() {
@@ -255,4 +260,42 @@ function getPendingDailyResults() {
 
 function clearPendingDailyResult(dateKey) {
     localStorage.removeItem(getPendingResultStorageKey(dateKey));
+}
+
+function savePendingSolutionDiscovery(result) {
+    if (!result?.dateKey || !result.solution?.canonicalKey) return;
+
+    const storageKey = getPendingDiscoveryStorageKey(result);
+    if (localStorage.getItem(storageKey)) return;
+
+    localStorage.setItem(storageKey, JSON.stringify({
+        ...result,
+        savedLocallyAt: new Date().toISOString()
+    }));
+}
+
+function getPendingSolutionDiscoveries() {
+    const pendingDiscoveries = [];
+
+    for (let index = 0; index < localStorage.length; index++) {
+        const key = localStorage.key(index);
+        if (!key?.startsWith(PENDING_DISCOVERY_STORAGE_PREFIX)) continue;
+
+        try {
+            const result = JSON.parse(localStorage.getItem(key));
+            if (result?.dateKey && result.solution?.canonicalKey) {
+                pendingDiscoveries.push(result);
+            }
+        } catch (error) {
+            console.warn('Unable to parse pending solution discovery:', error);
+        }
+    }
+
+    return pendingDiscoveries;
+}
+
+function clearPendingSolutionDiscovery(result) {
+    if (!result?.dateKey || !result.solution?.canonicalKey) return;
+
+    localStorage.removeItem(getPendingDiscoveryStorageKey(result));
 }
