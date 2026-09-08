@@ -72,9 +72,15 @@ function setupButtonEventListeners() {
             resetButton.addEventListener('click', resetGame);
         }
 
-        const findAnotherSolutionButton = document.getElementById('findAnotherSolutionButton');
-        if (findAnotherSolutionButton) {
-            findAnotherSolutionButton.addEventListener('click', startAnotherSolution);
+        const closeWinMessageButton = document.getElementById('closeWinMessageButton');
+        if (closeWinMessageButton) {
+            closeWinMessageButton.addEventListener('click', () => {
+                if (winMessage) winMessage.classList.add('hidden');
+            });
+            closeWinMessageButton.addEventListener('touchstart', (event) => {
+                event.preventDefault();
+                if (winMessage) winMessage.classList.add('hidden');
+            });
         }
 
         const buttons = [resetButton, rotateCWButton, rotateCCWButton, flipHButton, flipVButton];

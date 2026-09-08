@@ -356,7 +356,7 @@ button {
 
 #winMessage {
     position: fixed;
-    top: calc(656px * var(--game-scale));
+    top: calc(666px * var(--game-scale));
     left: 50%;
     width: calc(400px * var(--game-scale));
     transform: translate(-50%, -50%);
@@ -366,16 +366,22 @@ button {
     box-shadow: 0 0 20px rgba(0,0,0,0.3);
     z-index: 3;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(15px * var(--game-scale));
+}
+
+#winMessage.hidden {
+    display: none;
 }
 
 #winMessage h2 {
     color: #27ae60;
-    margin-bottom: calc(15px * var(--game-scale));
 }
 
 #winMessage p {
     font-size: calc(1.2rem * var(--game-scale));
-    margin-bottom: calc(15px * var(--game-scale));
     text-align: center;
 }
 
@@ -386,10 +392,6 @@ button {
 .win-save-status {
     color: #555;
     min-height: calc(1.2rem * var(--game-scale));
-}
-
-#winSignInButton {
-    margin: 0 auto;
 }
 
 /* Modal Styles */

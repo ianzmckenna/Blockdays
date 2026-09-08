@@ -194,7 +194,7 @@ function updateWinSaveStatus(saveResult) {
             setWinSaveStatus('Saved to your history.', false);
             break;
         case 'exists':
-            setWinSaveStatus('Your first time for today is already saved.', false);
+            setWinSaveStatus('Your first time today is already saved.', false);
             break;
         case 'pending':
             if (firebaseState.isConfigured) {
@@ -441,7 +441,7 @@ async function freezeTodayTimerFromSavedResult() {
             gameState.isSolved = true;
             clearPendingDailyResult(result.dateKey);
             updateWinSolveTime(result);
-            setWinSaveStatus('Your first time for today is already saved.', false);
+            setWinSaveStatus('Your first time today is already saved.', false);
         }
     } catch (error) {
         console.warn('Unable to load today\'s saved timer:', error);

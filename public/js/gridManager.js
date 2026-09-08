@@ -157,9 +157,3 @@ function resetGame() {
     // Redraw the palette
     drawPiecePalette();
 }
-
-function startAnotherSolution() {
-    clearFrozenDailyTimer();
-    resetGame();
-    startDailyTimerIfNeeded();
-}
